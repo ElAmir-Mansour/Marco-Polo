@@ -26,8 +26,17 @@ if (hasCredentials) {
   console.warn("⚠️ AWS Credentials not found. DynamoDB falling back to file-backed in-memory store for local development.");
 }
 
-// Filesystem mock database file path
-const ddbFilePath = path.join(process.cwd(), "in-memory-dynamodb.json");
+// Filesystem mock database file path - use /tmp on Vercel to avoid EROFS
+const isVercel = 
+  process.env.VERCEL === "1" || 
+  process.env.VERCEL === "true" ||
+  process.env.LAMBDA_TASK_ROOT !== undefined ||
+  process.cwd() === "/var/task" ||
+  process.cwd().includes("/var/task");
+
+const ddbFilePath = isVercel
+  ? path.join("/tmp", "in-memory-dynamodb.json")
+  : path.join(process.cwd(), "in-memory-dynamodb.json");
 
 // Helper to load mock DB from filesystem
 function loadMockStore() {

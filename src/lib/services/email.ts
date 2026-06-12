@@ -81,8 +81,42 @@ export async function sendOtpEmail(email: string, otp: string) {
     </html>
   `;
 
-  // Check if we are running in mock mode or dev mode without a key
   const resendKey = process.env.RESEND_API_KEY;
+  const sesFromEmail = process.env.AWS_SES_FROM_EMAIL;
+
+  // If AWS SES configured email is present, prioritize it
+  if (sesFromEmail && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    try {
+      const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
+      const sesClient = new SESClient({
+        region: process.env.AWS_REGION || "eu-north-1",
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        },
+      });
+
+      await sesClient.send(
+        new SendEmailCommand({
+          Source: sesFromEmail,
+          Destination: {
+            ToAddresses: [email],
+          },
+          Message: {
+            Subject: { Data: subject, Charset: "UTF-8" },
+            Body: {
+              Html: { Data: html, Charset: "UTF-8" },
+            },
+          },
+        })
+      );
+      return { success: true, mock: false };
+    } catch (error: any) {
+      console.error("AWS SES API error:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
   const isMock = process.env.MOCK_EMAIL === "true" || !resendKey;
 
   if (isMock) {
@@ -105,7 +139,15 @@ export async function sendOtpEmail(email: string, otp: string) {
       if (typeof window === "undefined") {
         const fs = require("fs");
         const path = require("path");
-        const bypassPath = path.join(process.cwd(), "in-memory-db.json");
+        const isVercel = 
+          process.env.VERCEL === "1" || 
+          process.env.VERCEL === "true" ||
+          process.env.LAMBDA_TASK_ROOT !== undefined ||
+          process.cwd() === "/var/task" ||
+          process.cwd().includes("/var/task");
+        const bypassPath = isVercel
+          ? path.join("/tmp", "in-memory-db.json")
+          : path.join(process.cwd(), "in-memory-db.json");
         if (fs.existsSync(bypassPath)) {
           const dbData = JSON.parse(fs.readFileSync(bypassPath, "utf8"));
           if (!dbData.mockOtps) dbData.mockOtps = {};

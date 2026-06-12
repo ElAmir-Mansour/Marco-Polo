@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import * as schema from "./schema";
 import fs from "fs";
 import path from "path";
+import { Signer } from "@aws-sdk/rds-signer";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -24,8 +25,6 @@ if (dbUrlStr.includes(".rds.amazonaws.com") && process.env.AWS_ACCESS_KEY_ID && 
     const username = parsedUrl.username || "postgres";
     const databaseName = parsedUrl.pathname.replace(/^\//, "") || "postgres";
     const region = process.env.AWS_REGION || "eu-north-1";
-
-    const { Signer } = require("@aws-sdk/rds-signer");
 
     const signer = new Signer({
       hostname,
@@ -77,8 +76,17 @@ if (process.env.NODE_ENV !== "production") {
 
 const realDb = drizzle(pool, { schema });
 
-// Filesystem mock database file path
-const dbFilePath = path.join(process.cwd(), "in-memory-db.json");
+// Filesystem mock database file path - use /tmp on Vercel to avoid EROFS (Read-only filesystem)
+const isVercel = 
+  process.env.VERCEL === "1" || 
+  process.env.VERCEL === "true" ||
+  process.env.LAMBDA_TASK_ROOT !== undefined ||
+  process.cwd() === "/var/task" ||
+  process.cwd().includes("/var/task");
+
+const dbFilePath = isVercel
+  ? path.join("/tmp", "in-memory-db.json")
+  : path.join(process.cwd(), "in-memory-db.json");
 
 // Helper to load mock DB from filesystem
 function loadInMemoryDb() {
@@ -97,7 +105,8 @@ function loadInMemoryDb() {
     transactions: [],
     roadmaps: [],
     forum_posts: [],
-    assessments: []
+    assessments: [],
+    verification_tokens: []
   };
 }
 
@@ -120,6 +129,7 @@ function getTableName(tableObj: any): string {
   if (tableObj === schema.roadmaps) return "roadmaps";
   if (tableObj === schema.forumPosts) return "forum_posts";
   if (tableObj === schema.assessments) return "assessments";
+  if (tableObj === schema.verificationTokens) return "verification_tokens";
   return tableObj.tableName || (tableObj._ && tableObj._.name) || "";
 }
 
@@ -153,7 +163,7 @@ if (!useMock) {
       console.log("✅ PostgreSQL is online. Using RDS Aurora DB.");
     })
     .catch((err) => {
-      console.warn("⚠️ DATABASE_URL is not set or PostgreSQL connection refused. Falling back to local in-memory PostgreSQL simulation.");
+      console.warn("⚠️ DATABASE_URL is not set or PostgreSQL connection refused. Falling back to local in-memory PostgreSQL simulation. Error:", err.message);
       useMock = true;
       globalForDb.useMock = true;
     });
@@ -236,6 +246,35 @@ const mockDb: any = {
           vals.some(v => a.userId === v || a.trackId === v)
         );
       }
+    },
+    verificationTokens: {
+      findFirst: async (queryParams: any) => {
+        const inMemoryDb = loadInMemoryDb();
+        const vals = extractValues(queryParams?.where);
+        const store = inMemoryDb.verification_tokens || [];
+        const match = store.find((vToken: any) =>
+          vals.some(v => vToken.email === v || vToken.token === v)
+        );
+        if (match) {
+          return {
+            ...match,
+            expiresAt: new Date(match.expiresAt),
+            createdAt: new Date(match.createdAt)
+          };
+        }
+        return null;
+      }
+    },
+    forumPosts: {
+      findMany: async (queryParams: any) => {
+        const inMemoryDb = loadInMemoryDb();
+        const vals = extractValues(queryParams?.where);
+        const store = inMemoryDb.forum_posts || [];
+        if (vals.length === 0) return store;
+        return store.filter((p: any) =>
+          vals.some(v => p.userId === v || p.authorEmail === v)
+        );
+      }
     }
   },
   insert: (tableObj: any) => {
@@ -245,23 +284,45 @@ const mockDb: any = {
         const normalizedData = Array.isArray(data) ? data : [data];
         const insertedRows: any[] = [];
         const inMemoryDb = loadInMemoryDb();
+        
+        // Ensure the table collection exists in mock database
+        if (!inMemoryDb[tableName]) {
+          inMemoryDb[tableName] = [];
+        }
+
         for (const item of normalizedData) {
+          // Check if record already exists by ID or Email to simulate upsert
+          const store = inMemoryDb[tableName as keyof typeof inMemoryDb] || [];
+          let existingIndex = -1;
+          if (tableName === "users") {
+            existingIndex = store.findIndex((r: any) => r.id === item.id || r.email === item.email);
+          } else if (tableName === "verification_tokens") {
+            existingIndex = store.findIndex((r: any) => r.email === item.email);
+          }
+
           const row = {
             id: item.id || `id_${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
             ...item
           };
-          const store = inMemoryDb[tableName as keyof typeof inMemoryDb];
-          if (store) {
+
+          if (existingIndex >= 0) {
+            Object.assign(store[existingIndex], row);
+            insertedRows.push(store[existingIndex]);
+          } else {
             store.push(row);
+            insertedRows.push(row);
           }
-          insertedRows.push(row);
         }
         saveInMemoryDb(inMemoryDb);
-        return {
+
+        const resultObj: any = {
           returning: async () => insertedRows,
+          onConflictDoUpdate: () => resultObj,
+          onConflictDoNothing: () => resultObj,
           then: (resolve: any) => resolve(insertedRows)
         };
+        return resultObj;
       }
     };
   },
@@ -313,6 +374,30 @@ const mockDb: any = {
         return chain;
       }
     };
+  },
+  delete: (tableObj: any) => {
+    const tableName = getTableName(tableObj);
+    return {
+      where: (whereParam: any) => {
+        const vals = extractValues(whereParam);
+        const inMemoryDb = loadInMemoryDb();
+        const store = inMemoryDb[tableName as keyof typeof inMemoryDb] || [];
+        
+        // Filter out matching records
+        const remaining = store.filter((row: any) => 
+          !vals.some(v => row.id === v || row.email === v || row.userId === v)
+        );
+        
+        inMemoryDb[tableName] = remaining;
+        saveInMemoryDb(inMemoryDb);
+        
+        const chain = {
+          returning: async () => store.filter((row: any) => vals.some(v => row.id === v || row.email === v || row.userId === v)),
+          then: (resolve: any) => resolve()
+        };
+        return chain;
+      }
+    };
   }
 };
 
@@ -337,20 +422,32 @@ function createBuilderProxy(realObj: any, chain: { prop: string | symbol; args: 
       if (prop === "then") {
         return function (onFulfilled: any, onRejected: any) {
           if (useMock) {
-            return playback(mockDb, chain).then(onFulfilled, onRejected);
+            const fallbackPromise = playback(mockDb, chain);
+            if (fallbackPromise && typeof fallbackPromise.then === "function") {
+              return fallbackPromise.then(onFulfilled, onRejected);
+            }
+            return Promise.resolve(fallbackPromise).then(onFulfilled, onRejected);
           }
           try {
             return target.then(onFulfilled, (err: any) => {
               console.warn("⚠️ Drizzle query execution failed. Falling back to local in-memory simulation.", err.message);
               useMock = true;
               globalForDb.useMock = true;
-              return playback(mockDb, chain).then(onFulfilled, onRejected);
+              const fallbackPromise = playback(mockDb, chain);
+              if (fallbackPromise && typeof fallbackPromise.then === "function") {
+                return fallbackPromise.then(onFulfilled, onRejected);
+              }
+              return Promise.resolve(fallbackPromise).then(onFulfilled, onRejected);
             });
           } catch (err: any) {
             console.warn("⚠️ Drizzle query execution failed. Falling back to local in-memory simulation.", err.message);
             useMock = true;
             globalForDb.useMock = true;
-            return playback(mockDb, chain).then(onFulfilled, onRejected);
+            const fallbackPromise = playback(mockDb, chain);
+            if (fallbackPromise && typeof fallbackPromise.then === "function") {
+              return fallbackPromise.then(onFulfilled, onRejected);
+            }
+            return Promise.resolve(fallbackPromise).then(onFulfilled, onRejected);
           }
         };
       }
@@ -359,7 +456,16 @@ function createBuilderProxy(realObj: any, chain: { prop: string | symbol; args: 
 
       if (typeof val === "function") {
         return function (...args: any[]) {
-          const nextChain = [...chain, { prop, args }];
+          // ONLY record safe, known builder methods to prevent symbols or engine internals from polluting the chain
+          const safeProps = [
+            "insert", "values", "onConflictDoUpdate", "onConflictDoNothing", 
+            "returning", "update", "set", "where", "delete", "select", 
+            "from", "orderBy", "limit", "query", "findFirst", "findMany"
+          ];
+          const nextChain = safeProps.includes(String(prop))
+            ? [...chain, { prop, args }]
+            : chain;
+          
           try {
             const nextRealObj = val.apply(target, args);
             return createBuilderProxy(nextRealObj, nextChain);
@@ -398,7 +504,11 @@ export const db = new Proxy(realDb, {
                   { prop: tFunc, args }
                 ];
                 if (useMock) {
-                  return playback(mockDb, chain);
+                  const fallbackPromise = playback(mockDb, chain);
+                  if (fallbackPromise && typeof fallbackPromise.then === "function") {
+                    return fallbackPromise;
+                  }
+                  return Promise.resolve(fallbackPromise);
                 }
                 try {
                   const result = realFunc.apply(realTable, args);
@@ -411,7 +521,11 @@ export const db = new Proxy(realDb, {
                               console.warn(`⚠️ Drizzle query.${String(qTable)}.${String(tFunc)} failed. Falling back to local in-memory simulation.`, err.message);
                               useMock = true;
                               globalForDb.useMock = true;
-                              return playback(mockDb, chain).then(onFulfilled, onRejected);
+                              const fallbackPromise = playback(mockDb, chain);
+                              if (fallbackPromise && typeof fallbackPromise.then === "function") {
+                                return fallbackPromise.then(onFulfilled, onRejected);
+                              }
+                              return Promise.resolve(fallbackPromise).then(onFulfilled, onRejected);
                             });
                           };
                         }
@@ -424,7 +538,11 @@ export const db = new Proxy(realDb, {
                   console.warn(`⚠️ Drizzle query.${String(qTable)}.${String(tFunc)} failed. Falling back to local in-memory simulation.`, err.message);
                   useMock = true;
                   globalForDb.useMock = true;
-                  return playback(mockDb, chain);
+                  const fallbackPromise = playback(mockDb, chain);
+                  if (fallbackPromise && typeof fallbackPromise.then === "function") {
+                    return fallbackPromise;
+                  }
+                  return Promise.resolve(fallbackPromise);
                 }
               };
             }
@@ -444,7 +562,11 @@ export const db = new Proxy(realDb, {
           console.warn(`⚠️ Drizzle ${String(prop)} failed on build. Falling back to local in-memory simulation.`, err.message);
           useMock = true;
           globalForDb.useMock = true;
-          return playback(mockDb, chain);
+          const fallbackPromise = playback(mockDb, chain);
+          if (fallbackPromise && typeof fallbackPromise.then === "function") {
+            return fallbackPromise;
+          }
+          return Promise.resolve(fallbackPromise);
         }
       };
     }

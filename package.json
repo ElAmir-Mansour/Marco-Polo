@@ -12,6 +12,7 @@
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/react": "^3.0.200",
     "@aws-sdk/client-dynamodb": "^3.1064.0",
+    "@aws-sdk/client-ses": "^3.1068.0",
     "@aws-sdk/lib-dynamodb": "^3.1064.0",
     "@aws-sdk/rds-signer": "^3.1067.0",
     "@react-three/drei": "^10.7.7",
