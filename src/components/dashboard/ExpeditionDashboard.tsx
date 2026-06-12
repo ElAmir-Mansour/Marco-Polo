@@ -447,39 +447,93 @@ export default function ExpeditionDashboard() {
   });
 
   const updateTooltipPosition = (rect: { x: number; y: number; width: number; height: number } | null) => {
-    if (!rect) {
+    const cardWidth = 350;
+    const cardHeight = 250;
+    const gap = 20;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (!rect || tourStep === 1) {
       setTooltipStyle({
         position: "fixed",
         left: "50%",
         top: "50%",
         transform: "translate(-50%, -50%)",
+        width: `${cardWidth}px`,
         transition: "all 0.3s ease",
       });
       return;
     }
 
-    const cardWidth = 350;
-    const cardHeight = 250;
-    const gap = 16;
-    
-    let left = rect.x + rect.width / 2 - cardWidth / 2;
-    let top = rect.y + rect.height + gap;
-    
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    if (left < 16) left = 16;
-    if (left + cardWidth > viewportWidth - 16) {
-      left = viewportWidth - cardWidth - 16;
-    }
-    
-    if (top + cardHeight > viewportHeight - 16) {
-      top = rect.y - cardHeight - gap;
-      if (top < 16) {
+    let left = 0;
+    let top = 0;
+    const isDesktop = viewportWidth >= 1024;
+
+    if (isDesktop) {
+      // Custom desktop side-positioning per step
+      if (tourStep === 2) {
+        // Learning Trail Map: place to the right
+        left = rect.x + rect.width + gap;
+        if (left + cardWidth > viewportWidth - 20) {
+          left = rect.x + rect.width - cardWidth - 30; // overlay slightly on the right side of the map
+        }
+        top = rect.y + 80;
+      } else if (tourStep === 3) {
+        // Daily Streak: place below
+        left = rect.x + rect.width / 2 - cardWidth / 2;
+        if (left + cardWidth > viewportWidth - 20) {
+          left = viewportWidth - cardWidth - 20;
+        }
+        top = rect.y + rect.height + gap;
+      } else if (tourStep === 4) {
+        // Challenge Sandbox: place to the left (overlaying the map)
+        left = rect.x - cardWidth - gap;
+        if (left < 20) {
+          left = rect.x + rect.width + gap; // fall back to right side
+          if (left + cardWidth > viewportWidth - 20) {
+            left = rect.x + 30; // overlay inside sandbox
+          }
+        }
+        top = rect.y + 120;
+      } else if (tourStep === 5) {
+        // AI Chat: place to the left of the chat panel
+        left = rect.x - cardWidth - gap;
+        top = rect.y + 100;
+      } else if (tourStep === 6) {
+        // Forum: place to the right or above
+        left = rect.x + rect.width + gap;
+        if (left + cardWidth > viewportWidth - 20) {
+          left = rect.x + rect.width - cardWidth - 30;
+        }
+        top = rect.y + 50;
+      } else {
+        // Default centering fallback
+        left = viewportWidth / 2 - cardWidth / 2;
         top = viewportHeight / 2 - cardHeight / 2;
       }
+    } else {
+      // Mobile positioning (always stack above or below)
+      left = viewportWidth / 2 - cardWidth / 2;
+      if (left < 10) left = 10;
+      
+      // Try below first
+      top = rect.y + rect.height + gap;
+      if (top + cardHeight > viewportHeight - 10) {
+        // Try above
+        top = rect.y - cardHeight - gap;
+        if (top < 10) {
+          // Center as fallback
+          top = viewportHeight / 2 - cardHeight / 2;
+        }
+      }
     }
-    
+
+    // Double check viewport bounds to prevent card from going off-screen
+    if (left < 10) left = 10;
+    if (left + cardWidth > viewportWidth - 10) left = viewportWidth - cardWidth - 10;
+    if (top < 10) top = 10;
+    if (top + cardHeight > viewportHeight - 10) top = viewportHeight - cardHeight - 10;
+
     setTooltipStyle({
       position: "fixed",
       left: `${left}px`,
@@ -1050,8 +1104,8 @@ export default function ExpeditionDashboard() {
                     <ThreeDFlame isGold={isGoldStreak} />
                   </Canvas>
                 </div>
-                <span className="leading-none text-[10px] sm:text-xs font-bold whitespace-nowrap select-none">
-                  {streakCount} {streakCount === 1 ? "Day" : "Days"}
+                <span className="leading-none text-[10px] sm:text-xs font-bold whitespace-nowrap select-none flex items-center gap-1">
+                  🔥 {streakCount} {streakCount === 1 ? "Day" : "Days"}
                 </span>
               </div>
             );
