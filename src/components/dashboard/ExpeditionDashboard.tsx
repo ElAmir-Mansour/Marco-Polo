@@ -213,8 +213,6 @@ const fragmentShader = `
 function ThreeDFlame({ isGold }: { isGold: boolean }) {
   const outerMeshRef = useRef<THREE.Mesh>(null);
   const innerMeshRef = useRef<THREE.Mesh>(null);
-  const outerMaterialRef = useRef<THREE.ShaderMaterial>(null);
-  const innerMaterialRef = useRef<THREE.ShaderMaterial>(null);
   const lightRef = useRef<THREE.PointLight>(null);
   const sparkRefs = useRef<THREE.Mesh[]>([]);
 
@@ -239,26 +237,43 @@ function ThreeDFlame({ isGold }: { isGold: boolean }) {
     setSparks(arr);
   }, []);
 
-  const outerUniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uIsGold: { value: isGold ? 1.0 : 0.0 }
-  }), [isGold]);
+  // Construct materials using native THREE.ShaderMaterial inside useMemo to ensure proper compilation and attachment
+  const outerMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+        uIsGold: { value: isGold ? 1.0 : 0.0 }
+      },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+  }, [isGold]);
 
-  const innerUniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uIsGold: { value: isGold ? 1.0 : 0.0 }
-  }), [isGold]);
+  const innerMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+        uIsGold: { value: isGold ? 1.0 : 0.0 }
+      },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+  }, [isGold]);
 
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
 
-    // 1. Update shader uniforms
-    if (outerMaterialRef.current) {
-      outerMaterialRef.current.uniforms.uTime.value = time;
-    }
-    if (innerMaterialRef.current) {
-      innerMaterialRef.current.uniforms.uTime.value = time * 1.35; // scroll inner slightly faster
-    }
+    // 1. Update shader uniforms directly on the materials
+    outerMaterial.uniforms.uTime.value = time;
+    innerMaterial.uniforms.uTime.value = time * 1.35; // scroll inner slightly faster
 
     // 2. Slow counter-rotations of the cylinders
     if (outerMeshRef.current) {
@@ -308,7 +323,7 @@ function ThreeDFlame({ isGold }: { isGold: boolean }) {
   });
 
   return (
-    <group position={[0, 0.03, 0]} scale={1.15}>
+    <group position={[0, 0.05, 0]} scale={1.25}>
       {/* Flickering light source at the base of the flame */}
       <pointLight 
         ref={lightRef} 
@@ -321,31 +336,13 @@ function ThreeDFlame({ isGold }: { isGold: boolean }) {
       {/* Outer volumetric flame mantle */}
       <mesh ref={outerMeshRef} position={[0, 0, 0]}>
         <cylinderGeometry args={[0.02, 0.16, 0.65, 16, 16, true]} />
-        <shaderMaterial
-          ref={outerMaterialRef}
-          vertexShader={vertexShader}
-          fragmentShader={fragmentShader}
-          uniforms={outerUniforms}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
+        <primitive object={outerMaterial} attach="material" />
       </mesh>
 
       {/* Inner hot core */}
       <mesh ref={innerMeshRef} position={[0, 0, 0]}>
         <cylinderGeometry args={[0.01, 0.11, 0.5, 16, 16, true]} />
-        <shaderMaterial
-          ref={innerMaterialRef}
-          vertexShader={vertexShader}
-          fragmentShader={fragmentShader}
-          uniforms={innerUniforms}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
+        <primitive object={innerMaterial} attach="material" />
       </mesh>
 
       {/* Rising spark embers */}
@@ -1099,9 +1096,8 @@ export default function ExpeditionDashboard() {
               >
                 {/* Volumetric 3D Flame animating directly behind the 2D fire emoji */}
                 <div className="relative h-6 w-6 flex items-center justify-center flex-shrink-0 select-none">
-                  <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none scale-[1.6]">
-                    <Canvas camera={{ position: [0, 0, 1.25], fov: 45 }} gl={{ alpha: true }}>
-                      <ambientLight intensity={1.5} />
+                  <div className="absolute inset-0 z-0 pointer-events-none">
+                    <Canvas camera={{ position: [0, 0, 0.82], fov: 45 }} gl={{ alpha: true }}>
                       <ThreeDFlame isGold={isGoldStreak} />
                     </Canvas>
                   </div>
