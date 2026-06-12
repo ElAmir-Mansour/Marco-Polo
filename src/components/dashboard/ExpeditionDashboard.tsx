@@ -1091,21 +1091,26 @@ export default function ExpeditionDashboard() {
             return (
               <div 
                 id="tour-streak" 
-                className={`flex items-center space-x-1 px-2.5 h-[30px] rounded-xl border transition-all ${
+                className={`flex items-center space-x-2 px-2.5 h-[30px] rounded-xl border transition-all ${
                   isGoldStreak 
                     ? "border-gold-sand/40 text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.35)] animate-pulse" 
                     : "border-orange-flame/30 text-orange-flame"
                 }`}
               >
-                {/* 3D Wireframe Flame Canvas */}
-                <div className="h-6 w-5 relative overflow-hidden flex items-center justify-center flex-shrink-0">
-                  <Canvas camera={{ position: [0, 0, 1.25], fov: 45 }} gl={{ alpha: true }}>
-                    <ambientLight intensity={1.5} />
-                    <ThreeDFlame isGold={isGoldStreak} />
-                  </Canvas>
+                {/* Volumetric 3D Flame animating directly behind the 2D fire emoji */}
+                <div className="relative h-6 w-6 flex items-center justify-center flex-shrink-0 select-none">
+                  <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none scale-150">
+                    <Canvas camera={{ position: [0, 0, 1.25], fov: 45 }} gl={{ alpha: true }}>
+                      <ambientLight intensity={1.5} />
+                      <ThreeDFlame isGold={isGoldStreak} />
+                    </Canvas>
+                  </div>
+                  <span className="relative z-10 text-[13px] filter drop-shadow-[0_0_6px_rgba(242,100,25,0.7)]">
+                    🔥
+                  </span>
                 </div>
-                <span className="leading-none text-[10px] sm:text-xs font-bold whitespace-nowrap select-none flex items-center gap-1">
-                  🔥 {streakCount} {streakCount === 1 ? "Day" : "Days"}
+                <span className="leading-none text-[10px] sm:text-xs font-bold whitespace-nowrap select-none">
+                  {streakCount} {streakCount === 1 ? "Day" : "Days"}
                 </span>
               </div>
             );
