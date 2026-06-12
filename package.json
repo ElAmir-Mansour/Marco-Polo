@@ -1,0 +1,49 @@
+{
+  "name": "marcopolo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.80",
+    "@ai-sdk/react": "^3.0.200",
+    "@aws-sdk/client-dynamodb": "^3.1064.0",
+    "@aws-sdk/lib-dynamodb": "^3.1064.0",
+    "@aws-sdk/rds-signer": "^3.1067.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/postprocessing": "^3.0.4",
+    "acorn": "^8.16.0",
+    "ai": "^6.0.198",
+    "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.7",
+    "pg": "^8.21.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "stripe": "^22.2.0",
+    "tailwind-merge": "^3.6.0",
+    "three": "^0.184.0",
+    "v0-sdk": "^0.16.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.7",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

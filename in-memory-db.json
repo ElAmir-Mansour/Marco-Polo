@@ -1,0 +1,87 @@
+{
+  "users": [
+    {
+      "id": "user_test",
+      "email": "traveler@silkroad.com",
+      "role": "traveler",
+      "experienceLevel": "beginner",
+      "targetRole": "Software Engineer",
+      "currentStatus": "frustrated",
+      "onboardingChatState": null,
+      "createdAt": "2026-06-10T01:59:26.018Z"
+    },
+    {
+      "id": "user_1781099765562",
+      "createdAt": "2026-06-10T13:56:05.563Z",
+      "email": "pcamir2002@gmail.com",
+      "role": "traveler",
+      "experienceLevel": "beginner",
+      "targetRole": "Backend Engineer",
+      "currentStatus": "normal",
+      "onboardingChatState": "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Peace be upon you, traveler! 🐫 I am the Caravan Master guide. What software engineering role is your target destination (e.g. Frontend, Backend, AI)?\"},{\"role\":\"user\",\"content\":\"backend\"},{\"role\":\"assistant\",\"content\":\"A fine destination: \\\"backend\\\"! Now, what is your experience level? Are you a Novice Traveler (beginner), Caravan Merchant (intermediate), or Expedition Master (advanced)?\"},{\"role\":\"user\",\"content\":\"traveler\"},{\"role\":\"assistant\",\"content\":\"Excellent. Tell me about your key technical interests (e.g. Next.js, databases, cloud, system design)?\"},{\"role\":\"user\",\"content\":\"dotnet c#\"},{\"role\":\"assistant\",\"content\":\"Almost there! Briefly describe any projects you have built, or what you hope to achieve during this trail.\"},{\"role\":\"user\",\"content\":\"desktop apps\"},{\"role\":\"assistant\",\"content\":\"Perfect! Preparing your learning trail map now...\"},{\"role\":\"user\",\"content\":\"lets go\"},{\"role\":\"assistant\",\"content\":\"Perfect! Preparing your learning trail map now...\"},{\"role\":\"user\",\"content\":\"lets go\"},{\"role\":\"assistant\",\"content\":\"Ah, 'traveler'! To chart your course accurately, my friend, tell me, are you a Novice Traveler (beginner), a seasoned Caravan Merchant (intermediate), or an Expedition Master (advanced) on these digital sands?\"},{\"role\":\"user\",\"content\":\"traveler\"},{\"role\":\"assistant\",\"content\":\"Ah, 'traveler'! To chart your course accurately, my friend, tell me, are you a Novice Traveler (beginner), a seasoned Caravan Merchant (intermediate), or an Expedition Master (advanced) on these digital sands?\"},{\"role\":\"user\",\"content\":\"beginner\"},{\"role\":\"assistant\",\"content\":\"Great, let me prepare your learning path map!\"}],\"collected\":{\"targetRole\":\"Backend Engineer\",\"experienceLevel\":\"beginner\",\"interests\":[\"dotnet\",\"c#\"],\"surveyAnswers\":\"The traveler is a beginner aiming for a Backend Engineer role, with interests in .NET and C#, and has experience building desktop apps.\"}}"
+    },
+    {
+      "id": "user_1781100464450",
+      "createdAt": "2026-06-10T14:07:44.450Z",
+      "email": "newtraveler@silkroad.com",
+      "role": "traveler",
+      "experienceLevel": "beginner",
+      "targetRole": "Software Engineer",
+      "currentStatus": "normal",
+      "onboardingChatState": "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Peace be upon you, traveler! 🐫 I am the Caravan Master guide. What software engineering role is your target destination (e.g. Frontend, Backend, AI)?\"},{\"role\":\"user\",\"content\":\"Backend\"},{\"role\":\"assistant\",\"content\":\"A fine destination: \\\"Backend\\\"! Now, what is your experience level? Are you a Novice Traveler (beginner), Caravan Merchant (intermediate), or Expedition Master (advanced)?\"}],\"collected\":{\"targetRole\":\"Backend\"}}"
+    }
+  ],
+  "mentors": [],
+  "bookings": [],
+  "transactions": [
+    {
+      "id": "id_3707rguhu",
+      "createdAt": "2026-06-10T14:47:38.416Z",
+      "userId": "user_1781099765562",
+      "amount": 499,
+      "type": "marketplace",
+      "currency": "USD",
+      "status": "completed"
+    },
+    {
+      "id": "id_q70sz4dmr",
+      "createdAt": "2026-06-10T14:47:41.696Z",
+      "userId": "user_1781099765562",
+      "amount": 1499,
+      "type": "marketplace",
+      "currency": "USD",
+      "status": "completed"
+    }
+  ],
+  "roadmaps": [
+    {
+      "id": "user_1781099765562_backend_roadmap",
+      "createdAt": "2026-06-10T13:57:11.116Z",
+      "title": "The Desert Caravan of backend Mastery",
+      "description": "A customized learning path generated to take you from a beginner level to an industry-ready engineering expert along the Silk Road.",
+      "difficulty": "beginner",
+      "isPremium": false,
+      "createdBy": "user_1781099765562"
+    },
+    {
+      "id": "user_1781099765562_backend_engineer_roadmap",
+      "createdAt": "2026-06-12T17:30:38.237Z",
+      "title": "The Desert Caravan of Backend Engineer Mastery",
+      "description": "A customized learning path generated to take you from a beginner level to an industry-ready engineering expert along the Silk Road.",
+      "difficulty": "beginner",
+      "isPremium": false,
+      "createdBy": "user_1781099765562"
+    }
+  ],
+  "forum_posts": [
+    {
+      "id": "id_mdatt8isk",
+      "createdAt": "2026-06-10T13:38:32.920Z",
+      "userId": "user_test",
+      "authorEmail": "pcamir2002@gmail.com",
+      "content": "I am so frustrated and stuck on this challenge",
+      "sentiment": "frustrated"
+    }
+  ],
+  "assessments": []
+}

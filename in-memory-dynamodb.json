@@ -1,0 +1,103 @@
+{
+  "streaks": {},
+  "progress": {
+    "user_1781099765562_user_1781099765562_backend_engineer_roadmap": {
+      "userId": "user_1781099765562",
+      "roadmapId": "user_1781099765562_backend_engineer_roadmap",
+      "completedSteps": [],
+      "currentActiveNode": "node-1",
+      "lastAccessedTimestamp": "2026-06-12T17:30:38.237Z",
+      "nodes": [
+        {
+          "id": "node-1",
+          "title": "Oasis of Foundations",
+          "description": "Understand the core building blocks: syntax, loops, scope, and primitive types.",
+          "difficulty": "beginner",
+          "order": 1,
+          "resources": [
+            {
+              "title": "MDN Web Docs: JavaScript basics",
+              "url": "https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/JavaScript_basics",
+              "type": "documentation"
+            },
+            {
+              "title": "JS Basics crash course video",
+              "url": "https://www.youtube.com/watch?v=W6NZfCO5SIk",
+              "type": "video"
+            }
+          ],
+          "challenge": {
+            "question": "Write a function 'sum(a, b)' that returns the sum of two numbers.",
+            "boilerplate": "function sum(a, b) {\n  // Write code here\n}",
+            "solutionPattern": "return\\s+a\\s*\\+\\s*b"
+          }
+        },
+        {
+          "id": "node-2",
+          "title": "Caravanserai of Advanced Logic",
+          "description": "Master arrays, objects, map/filter methods, and basic asynchronous promises.",
+          "difficulty": "intermediate",
+          "order": 2,
+          "resources": [
+            {
+              "title": "JavaScript Array Methods guide",
+              "url": "https://javascript.info/array-methods",
+              "type": "article"
+            },
+            {
+              "title": "Promises & Async/Await tutorial",
+              "url": "https://javascript.info/async",
+              "type": "documentation"
+            }
+          ],
+          "challenge": {
+            "question": "Write a function 'doubleArray(arr)' that returns a new array with all elements doubled.",
+            "boilerplate": "function doubleArray(arr) {\n  // Write code here\n}",
+            "solutionPattern": "map|for"
+          }
+        },
+        {
+          "id": "node-3",
+          "title": "The Dunes of Backend Architecture",
+          "description": "Learn Node.js, routing, express servers, and relational schema database queries.",
+          "difficulty": "intermediate",
+          "order": 3,
+          "resources": [
+            {
+              "title": "Node.js official guides",
+              "url": "https://nodejs.org/en/docs/guides",
+              "type": "documentation"
+            }
+          ],
+          "challenge": {
+            "question": "Create a route handler syntax placeholder returning a valid status code 200.",
+            "boilerplate": "function handleRequest(req, res) {\n  // Write code here\n}",
+            "solutionPattern": "status|send"
+          }
+        },
+        {
+          "id": "node-4",
+          "title": "The Great Bazaar of Global Scaling",
+          "description": "Configure AWS DynamoDB, handle database transaction ledgers, and optimize Next.js rendering.",
+          "difficulty": "advanced",
+          "order": 4,
+          "resources": [
+            {
+              "title": "AWS DynamoDB core concepts",
+              "url": "https://aws.amazon.com/dynamodb",
+              "type": "documentation"
+            }
+          ],
+          "challenge": {
+            "question": "Demonstrate checking query results with a simple condition 'results.length > 0'.",
+            "boilerplate": "function verifyResults(results) {\n  // Write code here\n}",
+            "solutionPattern": "length|if"
+          }
+        }
+      ],
+      "title": "The Desert Caravan of Backend Engineer Mastery",
+      "description": "A customized learning path generated to take you from a beginner level to an industry-ready engineering expert along the Silk Road."
+    }
+  },
+  "challengeLogs": {}
+}
