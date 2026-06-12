@@ -1,5 +1,19 @@
 {
-  "streaks": {},
+  "streaks": {
+    "user_1781099765562": {
+      "userId": "user_1781099765562",
+      "currentStreak": 5,
+      "maxStreak": 5,
+      "lastCompletedTimestamp": "2026-06-11T12:00:00.000Z",
+      "history": [
+        "2026-06-07",
+        "2026-06-08",
+        "2026-06-09",
+        "2026-06-10",
+        "2026-06-11"
+      ]
+    }
+  },
   "progress": {
     "user_1781099765562_user_1781099765562_backend_engineer_roadmap": {
       "userId": "user_1781099765562",

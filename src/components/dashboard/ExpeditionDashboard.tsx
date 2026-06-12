@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Compass, BookOpen, Layers, Award, Terminal, Flame, CheckCircle, Lock, Play, ArrowRight, ChevronRight, HelpCircle, MessageSquare, Sparkles, ShieldAlert, Loader2, LogOut, Brain, FileText } from "lucide-react";
+import { Compass, BookOpen, Layers, Award, Terminal, Flame, CheckCircle, Lock, Play, ArrowRight, ChevronRight, HelpCircle, MessageSquare, Sparkles, ShieldAlert, Loader2, LogOut, Brain, FileText, Shield, Coins, X } from "lucide-react";
 import CaravanMasterChat from "../chat/CaravanMasterChat";
 import * as acorn from "acorn";
 import confetti from "canvas-confetti";
 import { Logo } from "@/components/ui/Logo";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
 
 interface Resource {
   title: string;
@@ -51,315 +49,325 @@ interface Progress {
   difficulty?: string;
 }
 
-const vertexShader = `
-  uniform float uTime;
-  varying vec2 vUv;
-  varying vec3 vPosition;
+interface CanteenWidgetProps {
+  streak: Streak;
+  userProfile: {
+    coinsBalance: number;
+    streakShields: number;
+    subscriptionStatus: string;
+  } | null;
+  userId: string | null;
+  onRefreshData: () => void;
+}
 
-  void main() {
-    vUv = uv;
-    vPosition = position;
-    vec3 pos = position;
-    
-    // Wave sway that increases with height (pos.y ranges from -0.3 to 0.3)
-    float heightFactor = clamp((pos.y + 0.3) / 0.6, 0.0, 1.0);
-    
-    // Multi-frequency organic sway using compound sines (heat convection)
-    float swayX = sin(uTime * 3.5 + pos.y * 5.0) * 0.04 + sin(uTime * 1.5) * 0.015;
-    float swayZ = cos(uTime * 3.0 + pos.y * 4.0) * 0.03 + cos(uTime * 1.2) * 0.01;
-    
-    pos.x += swayX * heightFactor;
-    pos.z += swayZ * heightFactor;
-    
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
+function CanteenWidget({ streak, userProfile, userId, onRefreshData }: CanteenWidgetProps) {
+  const [open, setOpen] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+  const [buySuccess, setBuySuccess] = useState(false);
+  const widgetRef = useRef<HTMLDivElement>(null);
 
-const fragmentShader = `
-  uniform float uTime;
-  uniform float uIsGold;
-  varying vec2 vUv;
-  varying vec3 vPosition;
-
-  // Modulo 289
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+10.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
-  // 3D Simplex Noise
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-
-    vec3 i  = floor(v + vec3(dot(v, C.yyy)));
-    vec3 x0 = v - i + vec3(dot(i, C.xxx));
-
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-
-    vec3 x1 = x0 - i1 + vec3(C.x);
-    vec3 x2 = x0 - i2 + vec3(C.y);
-    vec3 x3 = x0 - vec3(D.y);
-
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-               i.z + vec4(0.0, i1.z, i2.z, 1.0))
-             + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-             + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-
-    vec4 j = p - 49.0 * floor(p * ns.z);
-
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-
-    vec4 x = x_ * ns.x + vec4(ns.yyyy);
-    vec4 y = y_ * ns.x + vec4(ns.yyyy);
-    vec4 h = 1.0 - abs(x) - abs(y);
-
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-
-    vec4 s0 = floor(b0)*2.0 + vec4(1.0);
-    vec4 s1 = floor(b1)*2.0 + vec4(1.0);
-    vec4 sh = -step(h, vec4(0.0));
-
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-    p0 *= norm.x;
-    p1 *= norm.y;
-    p2 *= norm.z;
-    p3 *= norm.w;
-
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-  }
-
-  void main() {
-    // Scroll coordinates upwards over time to make the fire rise
-    vec3 noiseCoord = vec3(vUv.x * 2.0, vUv.y * 1.5 - uTime * 2.0, uTime * 0.4);
-    
-    // First octave
-    float n1 = snoise(noiseCoord);
-    
-    // Second octave (higher frequency, lower amplitude)
-    float n2 = snoise(noiseCoord * 3.0 + vec3(1.2, 0.5, 0.8)) * 0.5;
-    
-    // Combine noise and normalize to [0, 1] range
-    float combinedNoise = (n1 + n2) / 1.5;
-    combinedNoise = combinedNoise * 0.5 + 0.5;
-    
-    // Shape mask: fade at top and bottom to create organic flame boundaries
-    float verticalFade = smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.75, vUv.y);
-    
-    float finalIntensity = combinedNoise * verticalFade * 1.4;
-    
-    // Threshold or alpha erosion to create lick contours
-    float opacity = smoothstep(0.1, 0.45, finalIntensity);
-    
-    // Color mapping based on active theme
-    vec3 color = vec3(0.0);
-    if (uIsGold > 0.5) {
-      // Premium Gold/Teal Flame Ramp: Deep Indigo base ➔ Glowing Teal ➔ Brilliant Gold ➔ Soft White core
-      vec3 colTeal = vec3(0.0, 0.66, 0.59);
-      vec3 colGold = vec3(0.83, 0.68, 0.21);
-      vec3 colWhite = vec3(1.0, 0.95, 0.85);
-      
-      if (finalIntensity < 0.35) {
-        color = mix(colTeal * 0.3, colTeal, finalIntensity / 0.35);
-      } else if (finalIntensity < 0.7) {
-        color = mix(colTeal, colGold, (finalIntensity - 0.35) / 0.35);
-      } else {
-        color = mix(colGold, colWhite, (finalIntensity - 0.7) / 0.3);
-      }
-    } else {
-      // Standard Flame Ramp: Deep Crimson ➔ Flame Orange ➔ Warm Yellow ➔ Bright Cream core
-      vec3 colCrimson = vec3(0.93, 0.15, 0.27);
-      vec3 colOrange = vec3(0.95, 0.39, 0.1);
-      vec3 colYellow = vec3(1.0, 0.82, 0.4);
-      vec3 colWhite = vec3(1.0, 0.98, 0.85);
-      
-      if (finalIntensity < 0.25) {
-        color = mix(colCrimson * 0.3, colCrimson, finalIntensity / 0.25);
-      } else if (finalIntensity < 0.55) {
-        color = mix(colCrimson, colOrange, (finalIntensity - 0.25) / 0.3);
-      } else if (finalIntensity < 0.8) {
-        color = mix(colOrange, colYellow, (finalIntensity - 0.55) / 0.25);
-      } else {
-        color = mix(colYellow, colWhite, (finalIntensity - 0.8) / 0.2);
-      }
-    }
-    
-    // Modulate opacity near the tip to blend smoothly into nothingness
-    float alpha = opacity * (1.0 - vUv.y * 0.5);
-    
-    gl_FragColor = vec4(color * 1.5, alpha * 0.9);
-  }
-`;
-
-function ThreeDFlame({ isGold }: { isGold: boolean }) {
-  const outerMeshRef = useRef<THREE.Mesh>(null);
-  const innerMeshRef = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
-  const sparkRefs = useRef<THREE.Mesh[]>([]);
-
-  const [sparks, setSparks] = useState<any[]>([]);
-
-  // Generate randomized float parameters on mount to maintain hook purity
   useEffect(() => {
-    const arr = [];
-    for (let i = 0; i < 8; i++) {
-      arr.push({
-        x: (Math.random() - 0.5) * 0.08,
-        y: -0.3 + Math.random() * 0.6,
-        z: (Math.random() - 0.5) * 0.08,
-        speed: 0.35 + Math.random() * 0.4,
-        swaySpeed: 4.0 + Math.random() * 5.0,
-        swayAmp: 0.02 + Math.random() * 0.03,
-        size: 0.015 + Math.random() * 0.015,
-        orbitSpeed: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 2.0),
-        orbitRadius: 0.08 + Math.random() * 0.08,
-      });
+    function handleClickOutside(event: MouseEvent) {
+      if (widgetRef.current && !widgetRef.current.contains(event.target as globalThis.Node)) {
+        setOpen(false);
+      }
     }
-    setSparks(arr);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Construct materials using native THREE.ShaderMaterial inside useMemo to ensure proper compilation and attachment
-  const outerMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uIsGold: { value: isGold ? 1.0 : 0.0 }
-      },
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide
-    });
-  }, [isGold]);
+  const streakCount = streak.currentStreak;
+  const isGoldStreak = streakCount >= 7;
+  const fillPercent = streakCount === 0 ? 0 : Math.min(100, Math.round((streakCount / 7) * 100));
 
-  const innerMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uIsGold: { value: isGold ? 1.0 : 0.0 }
-      },
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide
-    });
-  }, [isGold]);
-
-  useFrame((state, delta) => {
-    const time = state.clock.getElapsedTime();
-
-    // 1. Update shader uniforms directly on the materials
-    outerMaterial.uniforms.uTime.value = time;
-    innerMaterial.uniforms.uTime.value = time * 1.35; // scroll inner slightly faster
-
-    // 2. Slow counter-rotations of the cylinders
-    if (outerMeshRef.current) {
-      outerMeshRef.current.rotation.y = time * 0.4;
-    }
-    if (innerMeshRef.current) {
-      innerMeshRef.current.rotation.y = -time * 0.75;
-    }
-
-    // 3. Update point light intensity to flicker organically
-    if (lightRef.current) {
-      lightRef.current.intensity = 2.0 + Math.sin(time * 18.0) * 0.5 + Math.sin(time * 35.0) * 0.25;
-    }
-
-    // 4. Update spark positions
-    if (sparks.length > 0) {
-      sparks.forEach((p, idx) => {
-        const mesh = sparkRefs.current[idx];
-        if (mesh) {
-          // Increment height
-          p.y += delta * p.speed;
-
-          // Loop back to bottom when it escapes the top boundary
-          if (p.y > 0.35) {
-            p.y = -0.3;
-            p.x = (Math.random() - 0.5) * 0.08;
-            p.z = (Math.random() - 0.5) * 0.08;
-          }
-
-          // Apply convective sway + orbit
-          const angle = time * p.orbitSpeed;
-          const swayX = Math.sin(time * p.swaySpeed) * p.swayAmp;
-          const swayZ = Math.cos(time * p.swaySpeed * 0.85) * p.swayAmp;
-
-          const currentX = p.x + Math.sin(angle) * p.orbitRadius + swayX;
-          const currentZ = p.z + Math.cos(angle) * p.orbitRadius + swayZ;
-
-          mesh.position.set(currentX, p.y, currentZ);
-
-          // Shrink size as it rises
-          const hNorm = (p.y + 0.3) / 0.65; // 0 to 1
-          const currentScale = Math.max(0.001, (1.0 - hNorm * 0.85) * p.size);
-          mesh.scale.setScalar(currentScale);
-        }
+  const getLast7Days = () => {
+    const days = [];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      days.push({
+        dateStr,
+        dayName: dayNames[d.getUTCDay()],
+        dayNum: d.getUTCDate(),
+        isToday: i === 0,
+        completed: (streak.history || []).includes(dateStr),
       });
     }
-  });
+    return days;
+  };
+
+  const handleBuyShield = async () => {
+    if (!userId) return;
+    setBuying(true);
+    setBuyError(null);
+    setBuySuccess(false);
+
+    try {
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          amount: 0,
+          type: "marketplace",
+          action: "buy_shield",
+          useCoins: true,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to buy shield.");
+      }
+
+      setBuySuccess(true);
+      setTimeout(() => setBuySuccess(false), 2000);
+      onRefreshData();
+    } catch (err: any) {
+      setBuyError(err.message || "Purchase failed.");
+    } finally {
+      setBuying(false);
+    }
+  };
+
+  const canteenOutlineClass = isGoldStreak
+    ? "stroke-[#D4AF37] drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]"
+    : streakCount === 0
+    ? "stroke-[#F26419]/50 drop-shadow-[0_0_6px_rgba(242,100,25,0.3)]"
+    : "stroke-[#00A896]/60";
+
+  const liquidColor = isGoldStreak
+    ? "#D4AF37"
+    : streakCount === 0
+    ? "transparent"
+    : "#00A896";
 
   return (
-    <group position={[0, 0.05, 0]} scale={1.25}>
-      {/* Flickering light source at the base of the flame */}
-      <pointLight 
-        ref={lightRef} 
-        color={isGold ? "#D4AF37" : "#F26419"} 
-        distance={0.8} 
-        decay={2.0} 
-        position={[0, -0.2, 0.1]} 
-      />
+    <div ref={widgetRef} className="relative z-[99]">
+      <style>{`
+        @keyframes wave-slide-1 {
+          0% { transform: translate(-40px, 0); }
+          100% { transform: translate(0, 0); }
+        }
+        @keyframes wave-slide-2 {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(-40px, 0); }
+        }
+        .canteen-wave-1 {
+          animation: wave-slide-1 4s infinite linear;
+        }
+        .canteen-wave-2 {
+          animation: wave-slide-2 2.5s infinite linear;
+        }
+        .canteen-wave-fast-1 {
+          animation: wave-slide-1 1.8s infinite linear;
+        }
+        .canteen-wave-fast-2 {
+          animation: wave-slide-2 1.2s infinite linear;
+        }
+      `}</style>
 
-      {/* Outer volumetric flame mantle */}
-      <mesh ref={outerMeshRef} position={[0, 0, 0]}>
-        <cylinderGeometry args={[0.02, 0.16, 0.65, 16, 16, true]} />
-        <primitive object={outerMaterial} attach="material" />
-      </mesh>
+      {/* Main Pill Widget */}
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center space-x-2 px-2.5 h-[30px] rounded-xl border transition-all cursor-pointer select-none bg-indigo-oasis/40 ${
+          isGoldStreak
+            ? "border-gold-sand/40 text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.25)] hover:border-gold-sand/80"
+            : streakCount === 0
+            ? "border-orange-flame/30 text-orange-flame/80 hover:border-orange-flame/60"
+            : "border-teal-spring/30 text-teal-spring hover:border-teal-spring/60"
+        }`}
+      >
+        <div className="relative h-6 w-5 flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 24 30" className="h-5 w-4 select-none fill-none">
+            <defs>
+              <clipPath id="canteen-clip-pill">
+                <path d="M 9 8 H 15 C 18 8, 20 10, 20 13 V 23 C 20 26, 17 28, 12 28 C 7 28, 4 26, 4 23 V 13 C 4 10, 6 8, 9 8 Z" />
+              </clipPath>
+            </defs>
 
-      {/* Inner hot core */}
-      <mesh ref={innerMeshRef} position={[0, 0, 0]}>
-        <cylinderGeometry args={[0.01, 0.11, 0.5, 16, 16, true]} />
-        <primitive object={innerMaterial} attach="material" />
-      </mesh>
+            {/* Cap */}
+            <path d="M 10 2 h 4 v 2 h -4 z" fill={isGoldStreak ? "#D4AF37" : "#8D99AE"} />
+            <path d="M 9 4 h 6 v 2 h -6 z" fill={isGoldStreak ? "#D4AF37" : "#F4F6F8"} className="opacity-80" />
+            <path d="M 11 6 h 2 v 2 h -2 z" fill={isGoldStreak ? "#D4AF37" : "#8D99AE"} />
 
-      {/* Rising spark embers */}
-      {sparks.map((_, idx) => (
-        <mesh 
-          key={idx} 
-          ref={(el) => { if (el) sparkRefs.current[idx] = el; }}
-        >
-          <tetrahedronGeometry args={[1]} />
-          <meshBasicMaterial 
-            color={isGold ? "#00A896" : "#FFD166"} 
-            transparent 
-            opacity={0.85} 
-          />
-        </mesh>
-      ))}
-    </group>
+            {/* Canteen Body Background */}
+            <path d="M 9 8 H 15 C 18 8, 20 10, 20 13 V 23 C 20 26, 17 28, 12 28 C 7 28, 4 26, 4 23 V 13 C 4 10, 6 8, 9 8 Z" fill="#070F19" fillOpacity="0.8" />
+
+            {/* Clipped liquid waves */}
+            <g clipPath="url(#canteen-clip-pill)">
+              {fillPercent > 0 && (
+                <g style={{ transform: `translateY(${100 - fillPercent}%)`, transition: "transform 1s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+                  <path 
+                    d="M -40 10 Q -30 7, -20 10 T 0 10 T 20 10 T 40 10 T 60 10 V 40 H -40 Z" 
+                    fill={liquidColor} 
+                    fillOpacity="0.4" 
+                    className={isGoldStreak ? "canteen-wave-fast-1" : "canteen-wave-1"} 
+                  />
+                  <path 
+                    d="M -40 10 Q -30 13, -20 10 T 0 10 T 20 10 T 40 10 T 60 10 V 40 H -40 Z" 
+                    fill={liquidColor} 
+                    fillOpacity="0.75" 
+                    className={isGoldStreak ? "canteen-wave-fast-2" : "canteen-wave-2"} 
+                  />
+                </g>
+              )}
+            </g>
+
+            {/* Outer border */}
+            <path 
+              d="M 9 8 H 15 C 18 8, 20 10, 20 13 V 23 C 20 26, 17 28, 12 28 C 7 28, 4 26, 4 23 V 13 C 4 10, 6 8, 9 8 Z" 
+              className={canteenOutlineClass} 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
+          </svg>
+        </div>
+
+        <span className="leading-none text-[10px] sm:text-xs font-bold whitespace-nowrap select-none font-serif tracking-wide">
+          {streakCount} {streakCount === 1 ? "Day" : "Days"}
+        </span>
+      </button>
+
+      {/* Hover/Click Detailed Popover */}
+      {open && (
+        <div className="absolute right-0 mt-2.5 w-80 bg-indigo-oasis border border-gold-sand/20 rounded-2xl p-5 shadow-[0_4px_30px_rgba(0,0,0,0.6)] backdrop-blur-md animate-fadeIn text-left text-xs space-y-4">
+          
+          <div className="flex items-center justify-between border-b border-text-secondary/15 pb-2">
+            <span className="font-serif font-bold tracking-wider text-gold-sand uppercase">Survival Canteen</span>
+            <button onClick={() => setOpen(false)} className="text-text-secondary hover:text-text-primary">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="h-16 w-12 bg-midnight/80 rounded-xl border border-text-secondary/10 flex items-center justify-center relative overflow-hidden flex-shrink-0">
+              <svg viewBox="0 0 24 30" className="h-12 w-9 fill-none">
+                <defs>
+                  <clipPath id="canteen-clip-large">
+                    <path d="M 9 8 H 15 C 18 8, 20 10, 20 13 V 23 C 20 26, 17 28, 12 28 C 7 28, 4 26, 4 23 V 13 C 4 10, 6 8, 9 8 Z" />
+                  </clipPath>
+                </defs>
+                <path d="M 10 2 h 4 v 2 h -4 z" fill={isGoldStreak ? "#D4AF37" : "#8D99AE"} />
+                <path d="M 9 4 h 6 v 2 h -6 z" fill={isGoldStreak ? "#D4AF37" : "#F4F6F8"} className="opacity-80" />
+                <path d="M 11 6 h 2 v 2 h -2 z" fill={isGoldStreak ? "#D4AF37" : "#8D99AE"} />
+
+                <path d="M 9 8 H 15 C 18 8, 20 10, 20 13 V 23 C 20 26, 17 28, 12 28 C 7 28, 4 26, 4 23 V 13 C 4 10, 6 8, 9 8 Z" fill="#070F19" fillOpacity="0.85" />
+
+                <g clipPath="url(#canteen-clip-large)">
+                  {fillPercent > 0 && (
+                    <g style={{ transform: `translateY(${100 - fillPercent}%)`, transition: "transform 1.2s ease-out" }}>
+                      <path 
+                        d="M -40 10 Q -30 7, -20 10 T 0 10 T 20 10 T 40 10 T 60 10 V 40 H -40 Z" 
+                        fill={liquidColor} 
+                        fillOpacity="0.4" 
+                        className={isGoldStreak ? "canteen-wave-fast-1" : "canteen-wave-1"} 
+                      />
+                      <path 
+                        d="M -40 10 Q -30 13, -20 10 T 0 10 T 20 10 T 40 10 T 60 10 V 40 H -40 Z" 
+                        fill={liquidColor} 
+                        fillOpacity="0.75" 
+                        className={isGoldStreak ? "canteen-wave-fast-2" : "canteen-wave-2"} 
+                      />
+                    </g>
+                  )}
+                </g>
+                <path 
+                  d="M 9 8 H 15 C 18 8, 20 10, 20 13 V 23 C 20 26, 17 28, 12 28 C 7 28, 4 26, 4 23 V 13 C 4 10, 6 8, 9 8 Z" 
+                  className={canteenOutlineClass} 
+                  strokeWidth="2.2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+              </svg>
+            </div>
+
+            <div className="flex-1 space-y-1">
+              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">Hydration Status</p>
+              <h4 className={`text-sm font-serif font-bold ${isGoldStreak ? "text-gold-sand" : "text-teal-spring"}`}>
+                {streakCount === 0 ? "Dehydrated" : `${fillPercent}% Hydrated`}
+              </h4>
+              <p className="text-text-secondary text-[9px]">
+                {isGoldStreak 
+                  ? "Unleashing neon gold flame bonus energy!" 
+                  : `${streakCount}/7 days to Nomad Master status.`}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="font-bold text-text-primary uppercase tracking-wide">Expedition Trail History</span>
+              <span className="text-text-secondary">Last 7 Days</span>
+            </div>
+            <div className="grid grid-cols-7 gap-1.5 text-center">
+              {getLast7Days().map((day) => (
+                <div key={day.dateStr} className="space-y-1">
+                  <span className="text-[8px] text-text-secondary block font-bold uppercase">{day.dayName}</span>
+                  <div 
+                    title={day.completed ? "Challenge Completed!" : day.isToday ? "Complete puzzle today to continue streak!" : "Missed Day"}
+                    className={`h-7 w-7 rounded-lg border flex items-center justify-center text-[10px] font-bold transition-all ${
+                      day.completed
+                        ? "bg-teal-spring/20 border-teal-spring text-teal-spring shadow-[0_0_6px_rgba(0,168,150,0.2)]"
+                        : day.isToday
+                        ? "bg-indigo-oasis border-gold-sand/40 text-gold-sand animate-pulse"
+                        : "bg-midnight border-text-secondary/15 text-text-secondary/40"
+                    }`}
+                  >
+                    {day.completed ? "✓" : day.dayNum}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-midnight/70 rounded-xl p-3 border border-text-secondary/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1.5 text-[11px] font-bold">
+                <Shield className="h-4 w-4 text-orange-flame flex-shrink-0 animate-pulse" />
+                <span className="text-text-primary">Streak Shields</span>
+              </div>
+              <span className="text-[11px] font-black text-orange-flame">
+                {userProfile?.streakShields || 0} Active
+              </span>
+            </div>
+            <p className="text-[9px] text-text-secondary leading-relaxed">
+              Deducts 1 shield automatically when you miss a day to protect your streak.
+            </p>
+
+            <div className="border-t border-text-secondary/15 pt-2 flex items-center justify-between gap-4">
+              <div className="flex items-center space-x-1">
+                <Coins className="h-3.5 w-3.5 text-gold-sand" />
+                <span className="font-bold text-gold-sand text-[11px]">{userProfile?.coinsBalance || 0}</span>
+              </div>
+
+              <button
+                onClick={handleBuyShield}
+                disabled={buying || !userProfile || userProfile.coinsBalance < 50}
+                className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition-all ${
+                  buySuccess
+                    ? "bg-teal-spring text-midnight"
+                    : "bg-gold-sand text-midnight hover:bg-gold-sand/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                }`}
+              >
+                {buying ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : buySuccess ? (
+                  "Shield Added!"
+                ) : (
+                  "Buy Shield (50c)"
+                )}
+              </button>
+            </div>
+            {buyError && <p className="text-[9px] text-orange-flame font-semibold">{buyError}</p>}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1082,35 +1090,18 @@ export default function ExpeditionDashboard() {
         <div className="flex items-center space-x-4">
           
           {/* Survival streak widget with hydration wave animation */}
-          {streak && (() => {
-            const streakCount = streak.currentStreak;
-            const isGoldStreak = streakCount >= 7;
-            return (
-              <div 
-                id="tour-streak" 
-                className={`flex items-center space-x-2 px-2.5 h-[30px] rounded-xl border transition-all overflow-hidden ${
-                  isGoldStreak 
-                    ? "border-gold-sand/40 text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.35)] animate-pulse" 
-                    : "border-orange-flame/30 text-orange-flame"
-                }`}
-              >
-                {/* Volumetric 3D Flame animating directly behind the 2D fire emoji */}
-                <div className="relative h-6 w-6 flex items-center justify-center flex-shrink-0 select-none">
-                  <div className="absolute inset-0 z-0 pointer-events-none">
-                    <Canvas camera={{ position: [0, 0, 0.82], fov: 45 }} gl={{ alpha: true }}>
-                      <ThreeDFlame isGold={isGoldStreak} />
-                    </Canvas>
-                  </div>
-                  <span className="relative z-10 text-[13px] filter drop-shadow-[0_0_6px_rgba(242,100,25,0.7)]">
-                    🔥
-                  </span>
-                </div>
-                <span className="leading-none text-[10px] sm:text-xs font-bold whitespace-nowrap select-none">
-                  {streakCount} {streakCount === 1 ? "Day" : "Days"}
-                </span>
-              </div>
-            );
-          })()}
+          {streak && (
+            <CanteenWidget
+              streak={streak}
+              userProfile={userProfile}
+              userId={userId}
+              onRefreshData={() => {
+                if (userId) {
+                  fetchProgressAndStreak(userId, roadmapId);
+                }
+              }}
+            />
+          )}
 
           {/* Skill IQ Assessment Button */}
           <button

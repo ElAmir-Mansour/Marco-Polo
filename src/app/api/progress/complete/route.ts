@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getProgress, saveProgress, getStreak, saveStreak, saveChallengeLog } from "@/lib/aws/dynamodb";
+import { getProgress, saveProgress, saveStreak, saveChallengeLog } from "@/lib/aws/dynamodb";
+import { checkAndDecayStreak } from "@/lib/services/streak";
 
 export async function POST(request: Request) {
   try {
@@ -42,8 +43,8 @@ export async function POST(request: Request) {
       progressUpdated = true;
     }
 
-    // 2. Update Streak
-    const streak = await getStreak(userId);
+    // 2. Update Streak (Evaluate baseline using checkAndDecayStreak first)
+    const streak = await checkAndDecayStreak(userId);
     let streakUpdated = false;
 
     if (isCorrect) {
@@ -51,16 +52,10 @@ export async function POST(request: Request) {
       const lastCompleted = streak.lastCompletedTimestamp ? streak.lastCompletedTimestamp.split("T")[0] : "";
       
       if (lastCompleted !== todayStr) {
-        // Increment streak
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-        if (lastCompleted === yesterdayStr || lastCompleted === "") {
-          // Continuous streak or initial
+        // If streak is active (currentStreak > 0), increment it; otherwise set to 1.
+        if (streak.currentStreak > 0) {
           streak.currentStreak += 1;
         } else {
-          // Streak broken
           streak.currentStreak = 1;
         }
 
