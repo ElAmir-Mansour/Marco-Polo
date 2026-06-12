@@ -107,7 +107,7 @@ const fragmentShader = `
     i = mod289(i);
     vec4 p = permute(permute(permute(
                i.z + vec4(0.0, i1.z, i2.z, 1.0))
-             + i.y + vec4(0.0, i1.y, i2.y, 1.0)
+             + i.y + vec4(0.0, i1.y, i2.y, 1.0))
              + i.x + vec4(0.0, i1.x, i2.x, 1.0));
 
     float n_ = 0.142857142857;
@@ -308,7 +308,7 @@ function ThreeDFlame({ isGold }: { isGold: boolean }) {
   });
 
   return (
-    <group>
+    <group position={[0, 0.03, 0]} scale={1.15}>
       {/* Flickering light source at the base of the flame */}
       <pointLight 
         ref={lightRef} 
@@ -1091,7 +1091,7 @@ export default function ExpeditionDashboard() {
             return (
               <div 
                 id="tour-streak" 
-                className={`flex items-center space-x-2 px-2.5 h-[30px] rounded-xl border transition-all ${
+                className={`flex items-center space-x-2 px-2.5 h-[30px] rounded-xl border transition-all overflow-hidden ${
                   isGoldStreak 
                     ? "border-gold-sand/40 text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.35)] animate-pulse" 
                     : "border-orange-flame/30 text-orange-flame"
@@ -1099,7 +1099,7 @@ export default function ExpeditionDashboard() {
               >
                 {/* Volumetric 3D Flame animating directly behind the 2D fire emoji */}
                 <div className="relative h-6 w-6 flex items-center justify-center flex-shrink-0 select-none">
-                  <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none scale-150">
+                  <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none scale-[1.6]">
                     <Canvas camera={{ position: [0, 0, 1.25], fov: 45 }} gl={{ alpha: true }}>
                       <ambientLight intensity={1.5} />
                       <ThreeDFlame isGold={isGoldStreak} />
