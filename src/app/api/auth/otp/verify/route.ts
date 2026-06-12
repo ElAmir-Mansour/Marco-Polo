@@ -20,9 +20,42 @@ export async function POST(request: Request) {
     const cleanToken = token.trim();
 
     // 1. Find the token details
-    const tokenRecord = await db.query.verificationTokens.findFirst({
+    let tokenRecord = await db.query.verificationTokens.findFirst({
       where: eq(verificationTokens.email, normalizedEmail),
     });
+
+    if (!tokenRecord) {
+      // Fallback: check mockDb directly in case there was a connection mismatch between serverless containers
+      try {
+        const fs = require("fs");
+        const path = require("path");
+        const isVercel = 
+          process.env.VERCEL === "1" || 
+          process.env.VERCEL === "true" ||
+          process.env.LAMBDA_TASK_ROOT !== undefined ||
+          process.cwd() === "/var/task" ||
+          process.cwd().includes("/var/task");
+        const dbFilePath = isVercel
+          ? path.join("/tmp", "in-memory-db.json")
+          : path.join(process.cwd(), "in-memory-db.json");
+          
+        if (fs.existsSync(dbFilePath)) {
+          const dbData = JSON.parse(fs.readFileSync(dbFilePath, "utf8"));
+          const mockTokens = dbData.verification_tokens || [];
+          const match = mockTokens.find((t: any) => t.email === normalizedEmail);
+          if (match) {
+            tokenRecord = {
+              ...match,
+              expiresAt: new Date(match.expiresAt),
+              createdAt: new Date(match.createdAt)
+            };
+            console.log("ℹ️ OTP token verified from local mock fallback store.");
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to read from local mock fallback store during verification:", err);
+      }
+    }
 
     if (!tokenRecord) {
       return NextResponse.json(

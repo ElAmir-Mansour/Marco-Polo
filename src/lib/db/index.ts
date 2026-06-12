@@ -47,7 +47,7 @@ if (dbUrlStr.includes(".rds.amazonaws.com") && process.env.AWS_ACCESS_KEY_ID && 
       },
       max: 10,
       idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 15000,
       ssl: {
         rejectUnauthorized: false
       }
@@ -58,7 +58,7 @@ if (dbUrlStr.includes(".rds.amazonaws.com") && process.env.AWS_ACCESS_KEY_ID && 
       connectionString: dbUrlStr,
       max: 10,
       idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 15000,
     });
   }
 } else {
@@ -66,7 +66,7 @@ if (dbUrlStr.includes(".rds.amazonaws.com") && process.env.AWS_ACCESS_KEY_ID && 
     connectionString: dbUrlStr,
     max: 10,
     idleTimeoutMillis: 5000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 15000,
   });
 }
 
