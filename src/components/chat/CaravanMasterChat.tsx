@@ -11,9 +11,10 @@ interface CaravanMasterChatProps {
     experienceLevel?: string;
     nodeTitle?: string;
   };
+  currentCode?: string;
 }
 
-export default function CaravanMasterChat({ userContext }: CaravanMasterChatProps) {
+export default function CaravanMasterChat({ userContext, currentCode }: CaravanMasterChatProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -49,11 +50,19 @@ export default function CaravanMasterChat({ userContext }: CaravanMasterChatProp
   const quickQuestions = [
     { text: "Give me a hint for this challenge", icon: Terminal },
     { text: "Explain the main concept of this oasis", icon: Sparkles },
-    { text: "What is the industry practice for this?", icon: Compass },
+    ...(currentCode && currentCode.trim() ? [{ text: "Explain/debug my code", icon: Compass }] : [
+      { text: "What is the industry practice for this?", icon: Compass }
+    ])
   ];
 
   const handleQuickQuestionClick = (questionText: string) => {
-    sendMessage({ text: questionText });
+    if (questionText === "Explain/debug my code" && currentCode) {
+      sendMessage({
+        text: `Explain or debug my current code solution for the "${userContext.nodeTitle || "active"}" challenge:\n\n\`\`\`javascript\n${currentCode}\n\`\`\``
+      });
+    } else {
+      sendMessage({ text: questionText });
+    }
   };
 
   const onSubmit = (e: React.FormEvent) => {

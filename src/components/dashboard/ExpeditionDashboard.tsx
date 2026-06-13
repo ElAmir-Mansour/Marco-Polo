@@ -392,8 +392,48 @@ export default function ExpeditionDashboard() {
   const [chatOpen, setChatOpen] = useState(true);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
   const [victoryModalOpen, setVictoryModalOpen] = useState(false);
-  const [camelCoords, setCamelCoords] = useState<{ x: number; y: number } | null>(null);
+  const [camelCoords, setCamelCoords] = useState<{ x: number; y: number; angle: number } | null>(null);
   const prevActiveIndexRef = useRef<number>(0);
+
+  // Real-time syntax and structural check states
+  const [liveSyntaxValid, setLiveSyntaxValid] = useState(true);
+  const [liveStructureValid, setLiveStructureValid] = useState(true);
+  const [liveSafetyValid, setLiveSafetyValid] = useState(true);
+  const [liveSyntaxError, setLiveSyntaxError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedNode || !codeSolution) return;
+
+    const timer = setTimeout(() => {
+      // 1. Check syntax validity
+      try {
+        acorn.parse(codeSolution, { ecmaVersion: 2020 });
+        setLiveSyntaxValid(true);
+        setLiveSyntaxError(null);
+      } catch (err: any) {
+        setLiveSyntaxValid(false);
+        setLiveSyntaxError(err.message);
+      }
+
+      // 2. Check structural pattern validity
+      try {
+        const patternStr = selectedNode.challenge.solutionPattern;
+        const pattern = new RegExp(patternStr);
+        setLiveStructureValid(pattern.test(codeSolution));
+      } catch (err) {
+        setLiveStructureValid(false);
+      }
+
+      // 3. Check loop safety (no potential infinite loops)
+      const hasInfiniteLoopRisk = 
+        (codeSolution.includes("while") && !codeSolution.includes("break") && codeSolution.includes("true")) ||
+        (codeSolution.includes("for") && codeSolution.includes(";;"));
+      setLiveSafetyValid(!hasInfiniteLoopRisk);
+
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [codeSolution, selectedNode]);
 
   // Phase 3 B2C Daily Companion States
   const [failCount, setFailCount] = useState(0);
@@ -482,7 +522,7 @@ export default function ExpeditionDashboard() {
     if (prevIdx === targetIdx) {
       const startNode = nodeCoordinates[targetIdx];
       if (startNode) {
-        setCamelCoords({ x: startNode.x, y: startNode.y });
+        setCamelCoords({ x: startNode.x, y: startNode.y, angle: 0 });
       }
       return;
     }
@@ -527,7 +567,13 @@ export default function ExpeditionDashboard() {
           Math.pow(localT, 3) * p1.y
         );
 
-        setCamelCoords({ x, y });
+        // Cubic Bezier tangent vector derivative calculations: B'(t) = 3(1-t)^2(P1-P0) + 6(1-t)t(P2-P1) + 3t^2(P3-P2)
+        const dx = 3 * Math.pow(mt, 2) * (cp1X - p0.x) + 6 * mt * localT * (cp2X - cp1X) + 3 * Math.pow(localT, 2) * (p1.x - cp2X);
+        const dy = 3 * Math.pow(mt, 2) * (cp1Y - p0.y) + 6 * mt * localT * (cp2Y - cp1Y) + 3 * Math.pow(localT, 2) * (p1.y - cp2Y);
+        const angleRad = Math.atan2(dy, dx);
+        const angleDeg = (angleRad * 180) / Math.PI;
+
+        setCamelCoords({ x, y, angle: angleDeg });
       }
 
       if (t < 1) {
@@ -536,7 +582,7 @@ export default function ExpeditionDashboard() {
         prevActiveIndexRef.current = targetIdx;
         const endNode = nodeCoordinates[targetIdx];
         if (endNode) {
-          setCamelCoords({ x: endNode.x, y: endNode.y });
+          setCamelCoords({ x: endNode.x, y: endNode.y, angle: 0 });
         }
       }
     };
@@ -1372,12 +1418,23 @@ export default function ExpeditionDashboard() {
                     style={{ 
                       left: `${(camelCoords.x / 400) * 100}%`, 
                       top: `${(camelCoords.y / mapHeight) * 100}%`,
+                      transform: "translate(-50%, -120%)",
                     }}
-                    className="absolute z-20 pointer-events-none camel-walk -translate-x-1/2 -translate-y-[120%]"
+                    className="absolute z-20 pointer-events-none camel-walk"
                   >
                     <div className="bg-indigo-oasis/95 border border-gold-sand rounded-xl px-2 py-1 flex items-center space-x-1 shadow-[0_0_12px_rgba(212,175,55,0.4)] backdrop-blur-sm">
-                      <span className="text-sm">🐫</span>
-                      <span className="text-[8px] font-bold text-gold-sand tracking-wide uppercase font-serif">Caravan</span>
+                      <span 
+                        className="text-sm inline-block transition-transform duration-75"
+                        style={{
+                          transform: `rotate(${camelCoords.angle * 0.45}deg) ${
+                            // Default emoji faces left. If dx > 0 (moving right, angle in range [-90, 90]), flip it to face right.
+                            Math.abs(camelCoords.angle) < 90 ? "scaleX(-1)" : "scaleX(1)"
+                           }`
+                        }}
+                      >
+                        🐫
+                      </span>
+                      <span className="text-[8px] font-bold text-gold-sand tracking-wide uppercase font-serif font-sans">Caravan</span>
                     </div>
                   </div>
                 )}
@@ -1618,6 +1675,35 @@ export default function ExpeditionDashboard() {
                         spellCheck="false"
                       />
                     </div>
+                    {/* Live Analysis Strip */}
+                    <div className="bg-indigo-oasis/30 px-4 py-1.5 border-t border-text-secondary/10 flex items-center justify-between text-[9px] font-sans flex-wrap gap-2 select-none">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-text-secondary/70">Live Analysis:</span>
+                        <span className="flex items-center space-x-1">
+                          <span className={`h-1.5 w-1.5 rounded-full ${liveSyntaxValid ? "bg-teal-spring animate-pulse" : "bg-orange-flame"}`}></span>
+                          <span className={liveSyntaxValid ? "text-teal-spring font-semibold" : "text-orange-flame font-semibold"}>
+                            {liveSyntaxValid ? "Syntax OK" : "Syntax Error"}
+                          </span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span className={`h-1.5 w-1.5 rounded-full ${liveStructureValid ? "bg-teal-spring" : "bg-text-secondary/35"}`}></span>
+                          <span className={liveStructureValid ? "text-teal-spring font-semibold" : "text-text-secondary/70"}>
+                            Structure Match
+                          </span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span className={`h-1.5 w-1.5 rounded-full ${liveSafetyValid ? "bg-teal-spring" : "bg-orange-flame animate-pulse"}`}></span>
+                          <span className={liveSafetyValid ? "text-teal-spring font-semibold" : "text-orange-flame font-semibold"}>
+                            {liveSafetyValid ? "Safe Loops" : "Loop Danger"}
+                          </span>
+                        </span>
+                      </div>
+                      {liveSyntaxError && (
+                        <span className="text-[8.5px] text-orange-flame/80 font-mono truncate max-w-[200px]" title={liveSyntaxError}>
+                          {liveSyntaxError}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Interactive compiler console logs (Styled Retro Terminal) */}
@@ -1625,14 +1711,20 @@ export default function ExpeditionDashboard() {
                     {/* macOS-style Window control header bar */}
                     <div className="bg-[#121214] px-4 py-2 border-b border-text-secondary/10 flex items-center justify-between text-[10px] text-text-secondary/80 select-none">
                       <div className="flex items-center space-x-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-sm"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-sm cursor-pointer hover:opacity-80" onClick={() => setConsoleLogs([])} title="Clear Console"></span>
                         <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-[#DEA123] shadow-sm"></span>
                         <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-[#1AAB29] shadow-sm"></span>
                       </div>
                       <span className="flex items-center text-[9px] uppercase tracking-wider font-semibold text-text-secondary/70">
                         <Terminal className="h-3 w-3 mr-1 text-gold-sand animate-pulse" /> Sandbox Terminal Console
                       </span>
-                      <span className="cursor-blink text-teal-spring font-semibold text-[9px]">ACTIVE</span>
+                      <button 
+                        type="button"
+                        onClick={() => setConsoleLogs([])}
+                        className="text-[8px] uppercase font-bold text-text-secondary hover:text-gold-sand px-1.5 py-0.5 rounded border border-text-secondary/20 hover:border-gold-sand/40 transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
                     </div>
 
                     <div className="p-3 space-y-1.5 overflow-y-auto flex-1 select-text scrollbar-thin">
@@ -1705,6 +1797,7 @@ export default function ExpeditionDashboard() {
                 experienceLevel: progress.difficulty || "beginner",
                 nodeTitle: selectedNode?.title || "Foundations",
               }} 
+              currentCode={codeSolution}
             />
           </div>
         )}
@@ -1737,6 +1830,7 @@ export default function ExpeditionDashboard() {
                       experienceLevel: progress.difficulty || "beginner",
                       nodeTitle: selectedNode?.title || "Foundations",
                     }} 
+                    currentCode={codeSolution}
                   />
                 </div>
               </div>
