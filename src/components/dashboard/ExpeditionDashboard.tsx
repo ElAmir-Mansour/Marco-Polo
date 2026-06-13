@@ -417,6 +417,134 @@ export default function ExpeditionDashboard() {
     files: Record<string, { content: string }>;
   } | null>(null);
 
+  // Math coordinates for oases bezier curve mapping
+  const nodeSpacingY = 135;
+  const mapHeight = useMemo(() => {
+    if (!progress || !progress.nodes) return 0;
+    return progress.nodes.length * nodeSpacingY + 80;
+  }, [progress]);
+  
+  // Memoize nodeCoordinates to avoid constant recreations on unrelated state updates
+  const nodeCoordinates = useMemo(() => {
+    if (!progress) return [];
+    return (progress.nodes || []).map((node, index) => {
+      const y = index * nodeSpacingY + 70;
+      // alternate x coordinates left and right
+      const x = index % 2 === 0 ? 90 : 310;
+      return { id: node.id, x, y };
+    });
+  }, [progress]);
+
+  // Calculate SVG paths
+  const pathD = useMemo(() => {
+    if (nodeCoordinates.length === 0) return "";
+    let d = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
+    for (let i = 0; i < nodeCoordinates.length - 1; i++) {
+      const curr = nodeCoordinates[i];
+      const next = nodeCoordinates[i + 1];
+      const cp1X = curr.x;
+      const cp1Y = curr.y + 70;
+      const cp2X = next.x;
+      const cp2Y = next.y - 70;
+      d += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
+    }
+    return d;
+  }, [nodeCoordinates]);
+
+  const activeIndex = useMemo(() => {
+    if (!progress) return -1;
+    return (progress.nodes || []).findIndex(n => n.id === progress.currentActiveNode);
+  }, [progress]);
+
+  const completedPathD = useMemo(() => {
+    const maxCompletedIndex = activeIndex !== -1 ? activeIndex : 0;
+    if (nodeCoordinates.length === 0 || maxCompletedIndex === 0) return "";
+    let d = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
+    for (let i = 0; i < maxCompletedIndex; i++) {
+      const curr = nodeCoordinates[i];
+      const next = nodeCoordinates[i + 1];
+      const cp1X = curr.x;
+      const cp1Y = curr.y + 70;
+      const cp2X = next.x;
+      const cp2Y = next.y - 70;
+      d += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
+    }
+    return d;
+  }, [nodeCoordinates, activeIndex]);
+
+  // Cubic Bezier animation hook to traverse camel along path curves
+  useEffect(() => {
+    const targetIdx = activeIndex !== -1 ? activeIndex : 0;
+    const prevIdx = prevActiveIndexRef.current;
+
+    if (nodeCoordinates.length === 0) return;
+
+    if (prevIdx === targetIdx) {
+      const startNode = nodeCoordinates[targetIdx];
+      if (startNode) {
+        setCamelCoords({ x: startNode.x, y: startNode.y });
+      }
+      return;
+    }
+
+    let startTimestamp: number | null = null;
+    const duration = 1200; // Traversal duration
+    const stepsCount = Math.abs(targetIdx - prevIdx);
+    const isForward = targetIdx > prevIdx;
+    let animFrameId: number;
+
+    const animateCamel = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const elapsed = timestamp - startTimestamp;
+      const t = Math.min(elapsed / duration, 1);
+
+      const segmentIndex = Math.min(Math.floor(t * stepsCount), stepsCount - 1);
+      const localT = (t * stepsCount) - segmentIndex;
+
+      const currIdx = isForward ? prevIdx + segmentIndex : prevIdx - segmentIndex;
+      const nextIdx = isForward ? currIdx + 1 : currIdx - 1;
+
+      const p0 = nodeCoordinates[currIdx];
+      const p1 = nodeCoordinates[nextIdx];
+
+      if (p0 && p1) {
+        const cp1X = p0.x;
+        const cp1Y = p0.y + (isForward ? 70 : -70);
+        const cp2X = p1.x;
+        const cp2Y = p1.y + (isForward ? -70 : 70);
+
+        const mt = 1 - localT;
+        const x = Math.round(
+          Math.pow(mt, 3) * p0.x +
+          3 * Math.pow(mt, 2) * localT * cp1X +
+          3 * mt * Math.pow(localT, 2) * cp2X +
+          Math.pow(localT, 3) * p1.x
+        );
+        const y = Math.round(
+          Math.pow(mt, 3) * p0.y +
+          3 * Math.pow(mt, 2) * localT * cp1Y +
+          3 * mt * Math.pow(localT, 2) * cp2Y +
+          Math.pow(localT, 3) * p1.y
+        );
+
+        setCamelCoords({ x, y });
+      }
+
+      if (t < 1) {
+        animFrameId = requestAnimationFrame(animateCamel);
+      } else {
+        prevActiveIndexRef.current = targetIdx;
+        const endNode = nodeCoordinates[targetIdx];
+        if (endNode) {
+          setCamelCoords({ x: endNode.x, y: endNode.y });
+        }
+      }
+    };
+
+    animFrameId = requestAnimationFrame(animateCamel);
+    return () => cancelAnimationFrame(animFrameId);
+  }, [activeIndex, nodeCoordinates]);
+
   const handleV0Generate = async () => {
     if (!v0Prompt.trim() || !selectedNode) return;
     setGeneratingCode(true);
@@ -1034,129 +1162,6 @@ export default function ExpeditionDashboard() {
   const activeNodeId = progress.currentActiveNode;
   const nodes = progress.nodes || [];
   const percentComplete = Math.round((progress.completedSteps.length / nodes.length) * 100);
-
-  // Math coordinates for oases bezier curve mapping
-  const nodeSpacingY = 135;
-  const mapHeight = nodes.length * nodeSpacingY + 80;
-  
-  // Memoize nodeCoordinates to avoid constant recreations on unrelated state updates
-  const nodeCoordinates = useMemo(() => {
-    return (progress.nodes || []).map((node, index) => {
-      const y = index * nodeSpacingY + 70;
-      // alternate x coordinates left and right
-      const x = index % 2 === 0 ? 90 : 310;
-      return { id: node.id, x, y };
-    });
-  }, [progress.nodes]);
-
-  // Calculate SVG paths
-  const pathD = useMemo(() => {
-    if (nodeCoordinates.length === 0) return "";
-    let d = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
-    for (let i = 0; i < nodeCoordinates.length - 1; i++) {
-      const curr = nodeCoordinates[i];
-      const next = nodeCoordinates[i + 1];
-      const cp1X = curr.x;
-      const cp1Y = curr.y + 70;
-      const cp2X = next.x;
-      const cp2Y = next.y - 70;
-      d += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
-    }
-    return d;
-  }, [nodeCoordinates]);
-
-  const activeIndex = useMemo(() => {
-    return (progress.nodes || []).findIndex(n => n.id === progress.currentActiveNode);
-  }, [progress.nodes, progress.currentActiveNode]);
-
-  const completedPathD = useMemo(() => {
-    const maxCompletedIndex = activeIndex !== -1 ? activeIndex : 0;
-    if (nodeCoordinates.length === 0 || maxCompletedIndex === 0) return "";
-    let d = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
-    for (let i = 0; i < maxCompletedIndex; i++) {
-      const curr = nodeCoordinates[i];
-      const next = nodeCoordinates[i + 1];
-      const cp1X = curr.x;
-      const cp1Y = curr.y + 70;
-      const cp2X = next.x;
-      const cp2Y = next.y - 70;
-      d += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
-    }
-    return d;
-  }, [nodeCoordinates, activeIndex]);
-
-  // Cubic Bezier animation hook to traverse camel along path curves
-  useEffect(() => {
-    const targetIdx = activeIndex !== -1 ? activeIndex : 0;
-    const prevIdx = prevActiveIndexRef.current;
-
-    if (nodeCoordinates.length === 0) return;
-
-    if (prevIdx === targetIdx) {
-      const startNode = nodeCoordinates[targetIdx];
-      if (startNode) {
-        setCamelCoords({ x: startNode.x, y: startNode.y });
-      }
-      return;
-    }
-
-    let startTimestamp: number | null = null;
-    const duration = 1200; // Traversal duration
-    const stepsCount = Math.abs(targetIdx - prevIdx);
-    const isForward = targetIdx > prevIdx;
-    let animFrameId: number;
-
-    const animateCamel = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const elapsed = timestamp - startTimestamp;
-      const t = Math.min(elapsed / duration, 1);
-
-      const segmentIndex = Math.min(Math.floor(t * stepsCount), stepsCount - 1);
-      const localT = (t * stepsCount) - segmentIndex;
-
-      const currIdx = isForward ? prevIdx + segmentIndex : prevIdx - segmentIndex;
-      const nextIdx = isForward ? currIdx + 1 : currIdx - 1;
-
-      const p0 = nodeCoordinates[currIdx];
-      const p1 = nodeCoordinates[nextIdx];
-
-      if (p0 && p1) {
-        const cp1X = p0.x;
-        const cp1Y = p0.y + (isForward ? 70 : -70);
-        const cp2X = p1.x;
-        const cp2Y = p1.y + (isForward ? -70 : 70);
-
-        const mt = 1 - localT;
-        const x = Math.round(
-          Math.pow(mt, 3) * p0.x +
-          3 * Math.pow(mt, 2) * localT * cp1X +
-          3 * mt * Math.pow(localT, 2) * cp2X +
-          Math.pow(localT, 3) * p1.x
-        );
-        const y = Math.round(
-          Math.pow(mt, 3) * p0.y +
-          3 * Math.pow(mt, 2) * localT * cp1Y +
-          3 * mt * Math.pow(localT, 2) * cp2Y +
-          Math.pow(localT, 3) * p1.y
-        );
-
-        setCamelCoords({ x, y });
-      }
-
-      if (t < 1) {
-        animFrameId = requestAnimationFrame(animateCamel);
-      } else {
-        prevActiveIndexRef.current = targetIdx;
-        const endNode = nodeCoordinates[targetIdx];
-        if (endNode) {
-          setCamelCoords({ x: endNode.x, y: endNode.y });
-        }
-      }
-    };
-
-    animFrameId = requestAnimationFrame(animateCamel);
-    return () => cancelAnimationFrame(animFrameId);
-  }, [activeIndex, nodeCoordinates]);
 
   const activeCoord = nodeCoordinates[activeIndex !== -1 ? activeIndex : 0] || nodeCoordinates[0];
 
