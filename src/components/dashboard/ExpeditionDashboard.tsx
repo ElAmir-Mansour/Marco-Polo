@@ -1766,7 +1766,9 @@ export default function ExpeditionDashboard() {
                         top: `${(camelCoords.y / mapHeight) * 100}%`,
                         transform: "translate(-50%, -120%)",
                       }}
-                      className="absolute z-20 pointer-events-none camel-walk"
+                      className={`absolute z-20 pointer-events-none camel-walk transition-opacity duration-200 ${
+                        hoveredNodeId === (progress?.nodes?.[activeIndex]?.id ?? null) ? "opacity-0" : "opacity-100"
+                      }`}
                     >
                       <div className="bg-indigo-oasis/95 border border-gold-sand rounded-xl px-2 py-1 flex items-center space-x-1 shadow-[0_0_12px_rgba(212,175,55,0.4)] backdrop-blur-sm">
                         <span 
@@ -1805,7 +1807,7 @@ export default function ExpeditionDashboard() {
                           left: `${(coord.x / 400) * 100}%`,
                           top: `${(coord.y / mapHeight) * 100}%`,
                         }}
-                        className="z-10"
+                        className={hoveredNodeId === node.id ? "z-30" : "z-10"}
                       >
                         {/* Animated concentric ripples around active node */}
                         {state === "active" && (
@@ -1854,11 +1856,24 @@ export default function ExpeditionDashboard() {
                               top: "-15px", 
                               transform: index % 2 === 0 ? "translate(-20%, -100%)" : "translate(-80%, -100%)",
                             }}
-                            className="z-50 w-52 bg-indigo-oasis/95 border border-gold-sand/40 rounded-xl p-3.5 shadow-[0_4px_25px_rgba(0,0,0,0.85)] pointer-events-none animate-fadeIn backdrop-blur-md text-left text-[9px] space-y-2"
+                            className={`z-50 w-56 bg-indigo-oasis/95 rounded-xl p-4 shadow-[0_10px_35px_rgba(0,0,0,0.9)] pointer-events-none animate-fadeIn backdrop-blur-md text-left text-[10px] space-y-2.5 border transition-all duration-300 ${
+                              state === "active" 
+                                ? "border-teal-spring/60 shadow-[0_0_20px_rgba(0,168,150,0.3)]" 
+                                : state === "completed"
+                                ? "border-gold-sand/50 shadow-[0_0_15px_rgba(212,175,55,0.15)]"
+                                : "border-text-secondary/20"
+                            }`}
                           >
-                            <div className="flex justify-between items-center font-serif font-bold uppercase tracking-wider text-gold-sand">
-                              <span>Oasis {index + 1}</span>
-                              <span className={`text-[7px] px-1.5 py-0.5 rounded border ${
+                            <div className="flex justify-between items-center font-serif font-bold uppercase tracking-wider text-gold-sand text-[8.5px]">
+                              <div className="flex items-center space-x-1.5">
+                                <span>Oasis {index + 1}</span>
+                                {state === "active" && (
+                                  <span className="text-[7px] px-1 py-0.2 rounded bg-teal-spring/20 text-teal-spring border border-teal-spring/30 animate-pulse font-sans normal-case tracking-normal">
+                                    Active
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-[7px] px-1.5 py-0.5 rounded border font-sans tracking-normal font-medium ${
                                 node.difficulty === "beginner"
                                   ? "bg-teal-spring/10 text-teal-spring border-teal-spring/30"
                                   : node.difficulty === "intermediate"
@@ -1868,18 +1883,18 @@ export default function ExpeditionDashboard() {
                                 {node.difficulty}
                               </span>
                             </div>
-                            <h4 className="text-text-primary font-bold font-sans text-[10px] leading-tight">{node.title}</h4>
-                            <p className="text-text-secondary leading-relaxed font-sans line-clamp-2">{node.description}</p>
+                            <h4 className="text-text-primary font-bold font-sans text-xs leading-snug">{node.title}</h4>
+                            <p className="text-text-secondary leading-relaxed font-sans line-clamp-3 text-[9.5px]">{node.description}</p>
                             
-                            <div className="flex justify-between items-center text-[7.5px] text-text-secondary/80 font-bold border-t border-text-secondary/10 pt-2 mt-1">
+                            <div className="flex justify-between items-center text-[8.5px] text-text-secondary/80 font-bold border-t border-text-secondary/10 pt-2.5 mt-2">
                               <span className="flex items-center text-gold-sand">🪙 +25 Coins</span>
                               <span className="flex items-center text-teal-spring">🐪 {node.resources?.length || 0} Spices</span>
                             </div>
                             
-                            <div className="text-[7px] font-bold text-text-primary/70 flex items-center justify-between bg-midnight/40 px-2 py-0.5 rounded border border-text-secondary/5 mt-1.5">
+                            <div className="text-[8px] font-bold text-text-primary/70 flex items-center justify-between bg-midnight/40 px-2.5 py-1 rounded border border-text-secondary/5 mt-2">
                               <span>Status</span>
                               <span className={state === "completed" ? "text-gold-sand" : state === "active" ? "text-teal-spring animate-pulse" : "text-text-secondary"}>
-                                {state === "completed" ? "✓ Visited" : state === "active" ? "🔥 Active Oasis" : "locked"}
+                                {state === "completed" ? "✓ Visited" : state === "active" ? "🔥 Active Oasis" : "Locked"}
                               </span>
                             </div>
                           </div>

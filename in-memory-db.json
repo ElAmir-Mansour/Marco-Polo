@@ -106,6 +106,17 @@
       "coinsBalance": 0,
       "streakShields": 0,
       "createdAt": "2026-06-13T13:37:11.000Z"
+    },
+    {
+      "id": "usr_btjxgrms4",
+      "createdAt": "2026-06-13T17:11:21.542Z",
+      "email": "test@example.com",
+      "role": "traveler",
+      "coinsBalance": 100,
+      "streakShields": 0,
+      "onboardingChatState": "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Peace be upon you, traveler! 🐫 I am Master Marco Polo, your Caravan Master guide. What software engineering role is your target destination (e.g. Frontend, Backend, AI)?\"},{\"role\":\"user\",\"content\":\"Fullstack Developer 🚀\"},{\"role\":\"assistant\",\"content\":\"A fine destination, indeed! To chart the best course for your journey, tell me, traveler, what is your current experience level on this path? Are you a novice setting out, an experienced merchant, or a seasoned explorer of these lands?\"},{\"role\":\"user\",\"content\":\"Caravan Merchant (Intermediate) 🐫\"},{\"role\":\"assistant\",\"content\":\"Excellent, a Caravan Merchant on the fullstack path! To help me chart the most prosperous trade routes for you, what specific goods or lands capture your interest? Are there particular technologies (like Next.js, AWS, Drizzle) or areas (databases, cloud) you wish to master on this journey?\"},{\"role\":\"user\",\"content\":\"Next.js, React, Tailwind CSS\"},{\"role\":\"assistant\",\"content\":\"To truly chart your unique journey, tell me, brave traveler, what grand edifice do you dream of building, or what distant horizon do you wish to reach with these skills? What is the ultimate purpose of your quest?\"},{\"role\":\"user\",\"content\":\"Build SaaS projects & scale apps\"},{\"role\":\"assistant\",\"content\":\"Great, let me prepare your learning path map!\"}],\"collected\":{\"targetRole\":\"Fullstack Developer\",\"experienceLevel\":\"intermediate\",\"interests\":[\"Next.js\",\"React\",\"Tailwind CSS\"],\"surveyAnswers\":\"Build SaaS projects & scale apps\"}}",
+      "experienceLevel": "intermediate",
+      "targetRole": "Fullstack Developer"
     }
   ],
   "mentors": [
@@ -216,6 +227,15 @@
       "difficulty": "intermediate",
       "isPremium": false,
       "createdBy": "usr_25x0l3so0"
+    },
+    {
+      "id": "usr_btjxgrms4_fullstack_developer_roadmap",
+      "createdAt": "2026-06-13T17:14:46.999Z",
+      "title": "The Architect's Blueprint: From Foundation to Scalable Spire",
+      "description": "Embark on a grand expedition to master the art of modern web architecture. This roadmap guides you through the essential crafts of React, Tailwind CSS, and Next.js, transforming your vision into robust, scalable SaaS applications, ready to stand tall in the digital landscape.",
+      "difficulty": "intermediate",
+      "isPremium": false,
+      "createdBy": "usr_btjxgrms4"
     }
   ],
   "forum_posts": [
