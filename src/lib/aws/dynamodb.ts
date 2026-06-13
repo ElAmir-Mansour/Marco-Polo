@@ -118,8 +118,9 @@ export async function getStreak(userId: string): Promise<Streak> {
   }
 
   // Fallback
+  const currentMockStore = loadMockStore();
   return (
-    mockStore.streaks[userId] || {
+    currentMockStore.streaks[userId] || {
       userId,
       currentStreak: 0,
       maxStreak: 0,
@@ -147,8 +148,9 @@ export async function saveStreak(streak: Streak): Promise<void> {
   }
 
   // Fallback
-  mockStore.streaks[streak.userId] = streak;
-  saveMockStore(mockStore);
+  const currentMockStore = loadMockStore();
+  currentMockStore.streaks[streak.userId] = streak;
+  saveMockStore(currentMockStore);
 }
 
 // Helper: Get Progress
@@ -178,8 +180,9 @@ export async function getProgress(userId: string, roadmapId: string): Promise<Us
   }
 
   // Fallback
+  const currentMockStore = loadMockStore();
   return (
-    mockStore.progress[primaryKey] || {
+    currentMockStore.progress[primaryKey] || {
       userId,
       roadmapId,
       completedSteps: [],
@@ -212,8 +215,9 @@ export async function saveProgress(progress: UserProgress): Promise<void> {
   }
 
   // Fallback
-  mockStore.progress[primaryKey] = progress;
-  saveMockStore(mockStore);
+  const currentMockStore = loadMockStore();
+  currentMockStore.progress[primaryKey] = progress;
+  saveMockStore(currentMockStore);
 }
 
 // Helper: Save Challenge Log
@@ -239,6 +243,7 @@ export async function saveChallengeLog(log: ChallengeLog): Promise<void> {
   }
 
   // Fallback
-  mockStore.challengeLogs[primaryKey] = log;
-  saveMockStore(mockStore);
+  const currentMockStore = loadMockStore();
+  currentMockStore.challengeLogs[primaryKey] = log;
+  saveMockStore(currentMockStore);
 }
