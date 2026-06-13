@@ -401,6 +401,10 @@ export default function ExpeditionDashboard() {
   const [liveSafetyValid, setLiveSafetyValid] = useState(true);
   const [liveSyntaxError, setLiveSyntaxError] = useState<string | null>(null);
 
+  // Learning Trail Map Interactive States
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [mapZoom, setMapZoom] = useState(1);
+
   useEffect(() => {
     if (!selectedNode || !codeSolution) return;
 
@@ -463,6 +467,187 @@ export default function ExpeditionDashboard() {
     if (!progress || !progress.nodes) return 0;
     return progress.nodes.length * nodeSpacingY + 80;
   }, [progress]);
+
+  // Drag to scroll states & refs
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a") || target.closest("input") || target.closest("textarea")) {
+      return;
+    }
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    e.preventDefault();
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    container.scrollLeft = dragStart.current.scrollLeft - dx;
+    container.scrollTop = dragStart.current.scrollTop - dy;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a") || target.closest("input") || target.closest("textarea")) {
+      return;
+    }
+    const container = mapContainerRef.current;
+    if (!container || e.touches.length === 0) return;
+
+    setIsDragging(true);
+    const touch = e.touches[0];
+    dragStart.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const container = mapContainerRef.current;
+    if (!container || e.touches.length === 0) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - dragStart.current.x;
+    const dy = touch.clientY - dragStart.current.y;
+    container.scrollLeft = dragStart.current.scrollLeft - dx;
+    container.scrollTop = dragStart.current.scrollTop - dy;
+  };
+
+  const recenterMap = () => {
+    setMapZoom(1);
+    setTimeout(() => {
+      const el = document.getElementById("active-node-btn");
+      const container = mapContainerRef.current;
+      if (el && container) {
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        
+        const relativeTop = elRect.top - containerRect.top + container.scrollTop;
+        const relativeLeft = elRect.left - containerRect.left + container.scrollLeft;
+        
+        const targetTop = relativeTop - containerRect.height / 2 + elRect.height / 2;
+        const targetLeft = relativeLeft - containerRect.width / 2 + elRect.width / 2;
+        
+        container.scrollTo({
+          top: targetTop,
+          left: targetLeft,
+          behavior: "smooth"
+        });
+      }
+    }, 50);
+  };
+
+  // Center on progress load
+  useEffect(() => {
+    if (progress) {
+      recenterMap();
+    }
+  }, [progress]);
+
+  const stars = useMemo(() => {
+    const list = [];
+    const count = 25;
+    for (let i = 0; i < count; i++) {
+      const x = Math.floor(Math.sin(i * 12345) * 180) + 200; // distribute 20 to 380
+      const y = Math.floor((i / count) * 580) + Math.floor(Math.cos(i * 54321) * 20);
+      const size = (i % 3 === 0) ? 1.5 : (i % 3 === 1) ? 2.5 : 1.0;
+      const animationClass = (i % 3 === 0) ? "twinkle-star-1" : (i % 3 === 1) ? "twinkle-star-2" : "twinkle-star-3";
+      list.push({ x, y, size, animationClass, id: `star-${i}` });
+    }
+    return list;
+  }, []);
+
+  const renderDecorations = (coord: { x: number; y: number }, index: number) => {
+    const isLeftAligned = index % 2 === 0;
+    const decX = isLeftAligned ? coord.x + 50 : coord.x - 50;
+    const decY = coord.y - 15;
+    
+    if (index % 3 === 0) {
+      return (
+        <div 
+          key={`dec-${index}`}
+          style={{
+            position: "absolute",
+            left: `${(decX / 400) * 100}%`,
+            top: `${(decY / mapHeight) * 100}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+          className="pointer-events-none select-none z-0"
+        >
+          <svg viewBox="0 0 64 64" className="h-7 w-7 text-teal-spring/20 select-none pointer-events-none">
+            <path d="M30 60 Q33 42, 27 28 Q30 27, 33 28 Q36 42, 33 60 Z" fill="#D4AF37" opacity="0.3" />
+            <path d="M27 28 Q12 24, 10 35 Q20 33, 27 28 Z" fill="#00A896" opacity="0.4" />
+            <path d="M27 28 Q17 15, 21 7 Q26 17, 27 28 Z" fill="#00A896" opacity="0.4" />
+            <path d="M33 28 Q48 24, 50 35 Q40 33, 33 28 Z" fill="#00A896" opacity="0.4" />
+            <path d="M33 28 Q43 15, 39 7 Q35 17, 33 28 Z" fill="#00A896" opacity="0.4" />
+          </svg>
+        </div>
+      );
+    } else if (index % 3 === 1) {
+      return (
+        <div 
+          key={`dec-${index}`}
+          style={{
+            position: "absolute",
+            left: `${(decX / 400) * 100}%`,
+            top: `${(decY / mapHeight) * 100}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+          className="pointer-events-none select-none z-0"
+        >
+          <svg viewBox="0 0 64 64" className="h-6 w-6 text-gold-sand/20 select-none pointer-events-none">
+            <polygon points="32,18 12,46 52,46" fill="#0D1B2A" stroke="#D4AF37" strokeWidth="1.5" opacity="0.4" />
+            <polygon points="32,18 27,46 37,46" fill="#070F19" stroke="#D4AF37" strokeWidth="1" opacity="0.5" />
+            <line x1="32" y1="18" x2="32" y2="10" stroke="#F26419" strokeWidth="1.5" opacity="0.5" />
+            <polygon points="32,10 38,12 32,14" fill="#F26419" opacity="0.5" />
+          </svg>
+        </div>
+      );
+    } else {
+      return (
+        <div 
+          key={`dec-${index}`}
+          style={{
+            position: "absolute",
+            left: `${(decX / 400) * 100}%`,
+            top: `${(decY / mapHeight) * 100}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+          className="pointer-events-none select-none z-0"
+        >
+          <svg viewBox="0 0 64 64" className="h-5 w-5 text-teal-spring/15 select-none pointer-events-none">
+            <path d="M30 18 A5 5 0 0 1 40 18 V46 H30 Z" fill="#00A896" opacity="0.3" />
+            <path d="M30 28 H22 V22 A3 3 0 0 1 28 22 V28" fill="#00A896" opacity="0.3" />
+            <path d="M40 33 H48 V27 A3 3 0 0 1 44 27 V33" fill="#00A896" opacity="0.3" />
+          </svg>
+        </div>
+      );
+    }
+  };
   
   // Memoize nodeCoordinates to avoid constant recreations on unrelated state updates
   const nodeCoordinates = useMemo(() => {
@@ -961,6 +1146,35 @@ export default function ExpeditionDashboard() {
     return allPrevCompleted ? "unlocked" : "locked";
   };
 
+  const getNodeIcon = (node: Node, index: number, state: string) => {
+    const title = node.title.toLowerCase();
+    const iconSize = "h-4 w-4 transition-all duration-300 group-hover:scale-110";
+    if (state === "completed") {
+      return <CheckCircle className={`${iconSize} text-gold-sand`} />;
+    }
+    if (state === "locked") {
+      return <Lock className={`${iconSize} text-text-secondary/40`} />;
+    }
+    
+    // Unlocked or active node: select custom themed icon
+    if (index === 0) {
+      return <Compass className={`${iconSize} text-teal-spring`} />;
+    }
+    if (title.includes("foundation") || title.includes("basic") || title.includes("javascript")) {
+      return <BookOpen className={`${iconSize} text-teal-spring`} />;
+    }
+    if (title.includes("logic") || title.includes("array") || title.includes("function") || title.includes("manipulation")) {
+      return <Layers className={`${iconSize} text-teal-spring`} />;
+    }
+    if (title.includes("database") || title.includes("ledger") || title.includes("aws") || title.includes("dynamodb") || title.includes("postgres") || title.includes("scaling")) {
+      return <Coins className={`${iconSize} text-teal-spring`} />;
+    }
+    if (title.includes("ui") || title.includes("ux") || title.includes("frontend") || title.includes("react") || title.includes("component") || title.includes("visual")) {
+      return <Sparkles className={`${iconSize} text-teal-spring`} />;
+    }
+    return <Award className={`${iconSize} text-teal-spring`} />;
+  };
+
   const handleNodeClick = (node: Node) => {
     const state = getNodeState(node.id);
     if (state === "locked") return; // cannot select locked oases
@@ -1376,115 +1590,305 @@ export default function ExpeditionDashboard() {
             </div>
 
             {/* Curvy SVG learning trail map dashboard */}
-            <div id="tour-map" className="glass-panel rounded-2xl p-5 flex flex-col min-h-[420px] max-h-[580px] overflow-y-auto relative">
-              <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase mb-6">Learning Trail Map</h3>
-              
-              <div className="relative flex-1 w-full max-w-[340px] sm:max-w-[360px] mx-auto" style={{ height: `${mapHeight}px` }}>
-                
-                {/* SVG path connector lines representing Silk Road */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 400 ${mapHeight}`} preserveAspectRatio="none">
-                  {/* Background full dash trail */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke="rgba(212, 175, 55, 0.15)"
-                    strokeWidth="4"
-                    strokeDasharray="8 8"
-                    strokeLinecap="round"
-                  />
-                  {/* Active completed route highlight path */}
-                  {completedPathD && (
-                    <path
-                      d={completedPathD}
-                      fill="none"
-                      stroke="url(#trail-gradient)"
-                      strokeWidth="5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="drop-shadow-[0_0_6px_rgba(0,168,150,0.4)]"
+            <div 
+              id="tour-map" 
+              className={`relative rounded-2xl flex flex-col min-h-[420px] max-h-[580px] overflow-hidden glass-panel transition-all select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            >
+              <style>{`
+                @keyframes march-forward {
+                  to { stroke-dashoffset: -20; }
+                }
+                .trail-flow-completed {
+                  stroke-dasharray: 6 6;
+                  animation: march-forward 1.2s infinite linear !important;
+                }
+                .trail-flow-background {
+                  stroke-dasharray: 8 8;
+                  animation: march-forward 3.5s infinite linear !important;
+                }
+                @keyframes twinkle {
+                  0%, 100% { opacity: 0.15; }
+                  50% { opacity: 0.85; }
+                }
+                .twinkle-star-1 {
+                  animation: twinkle 3s infinite ease-in-out;
+                }
+                .twinkle-star-2 {
+                  animation: twinkle 2s infinite ease-in-out 0.5s;
+                }
+                .twinkle-star-3 {
+                  animation: twinkle 4.5s infinite ease-in-out 1.2s;
+                }
+              `}</style>
+
+              {/* Fixed Background Layer: Twinkling Stars & Sand Dunes */}
+              <div className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden">
+                {/* Twinkling star field */}
+                <svg className="absolute inset-0 w-full h-full" opacity="0.35">
+                  {stars.map((star) => (
+                    <circle
+                      key={star.id}
+                      cx={star.x}
+                      cy={star.y}
+                      r={star.size}
+                      fill="#F4F6F8"
+                      className={star.animationClass}
+                      opacity={0.3}
                     />
-                  )}
-                  <defs>
-                    <linearGradient id="trail-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#00A896" />
-                      <stop offset="100%" stopColor="#D4AF37" />
-                    </linearGradient>
-                  </defs>
+                  ))}
                 </svg>
+                
+                {/* Layered sand dunes at the bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-24 opacity-25">
+                  <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="bg-dune-grad-1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#D4AF37" />
+                        <stop offset="100%" stopColor="#070F19" />
+                      </linearGradient>
+                      <linearGradient id="bg-dune-grad-2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#00A896" />
+                        <stop offset="100%" stopColor="#070F19" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0 80 Q100 55, 200 75 T400 65 V100 H0 Z" fill="url(#bg-dune-grad-1)" />
+                    <path d="M0 90 Q120 75, 240 85 T400 80 V100 H0 Z" fill="url(#bg-dune-grad-2)" />
+                  </svg>
+                </div>
+              </div>
 
-                {/* Animated Camel Caravan element traversing the Bezier path */}
-                {camelCoords && (
-                  <div 
-                    style={{ 
-                      left: `${(camelCoords.x / 400) * 100}%`, 
-                      top: `${(camelCoords.y / mapHeight) * 100}%`,
-                      transform: "translate(-50%, -120%)",
-                    }}
-                    className="absolute z-20 pointer-events-none camel-walk"
+              {/* Scrollable Viewport Panel */}
+              <div
+                ref={mapContainerRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleMouseUp}
+                className="absolute inset-0 overflow-y-auto p-5 z-10 scroll-smooth"
+              >
+                <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase mb-6 z-10 select-none">Learning Trail Map</h3>
+
+                {/* Zoom & Recenter HUD Controls */}
+                <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-indigo-oasis/90 border border-gold-sand/20 p-1 rounded-xl shadow-lg backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => setMapZoom(prev => Math.min(1.3, prev + 0.1))}
+                    className="w-6 h-6 flex items-center justify-center text-xs font-bold text-text-secondary hover:text-gold-sand border border-text-secondary/5 rounded-lg bg-midnight/40 transition-colors cursor-pointer"
+                    title="Zoom In"
                   >
-                    <div className="bg-indigo-oasis/95 border border-gold-sand rounded-xl px-2 py-1 flex items-center space-x-1 shadow-[0_0_12px_rgba(212,175,55,0.4)] backdrop-blur-sm">
-                      <span 
-                        className="text-sm inline-block transition-transform duration-75"
-                        style={{
-                          transform: `rotate(${camelCoords.angle * 0.45}deg) ${
-                            // Default emoji faces left. If dx > 0 (moving right, angle in range [-90, 90]), flip it to face right.
-                            Math.abs(camelCoords.angle) < 90 ? "scaleX(-1)" : "scaleX(1)"
-                           }`
-                        }}
-                      >
-                        🐫
-                      </span>
-                      <span className="text-[8px] font-bold text-gold-sand tracking-wide uppercase font-serif font-sans">Caravan</span>
-                    </div>
-                  </div>
-                )}
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMapZoom(prev => Math.max(0.7, prev - 0.1))}
+                    className="w-6 h-6 flex items-center justify-center text-xs font-bold text-text-secondary hover:text-gold-sand border border-text-secondary/5 rounded-lg bg-midnight/40 transition-colors cursor-pointer"
+                    title="Zoom Out"
+                  >
+                    -
+                  </button>
+                  <button
+                    type="button"
+                    onClick={recenterMap}
+                    className="px-2 h-6 flex items-center justify-center text-[8px] uppercase tracking-wider font-bold text-text-secondary hover:text-gold-sand border border-text-secondary/5 rounded-lg bg-midnight/40 transition-colors cursor-pointer"
+                    title="Recenter Caravan"
+                  >
+                    Recenter
+                  </button>
+                </div>
 
-                {/* Oases node elements */}
-                {nodes.map((node, index) => {
-                  const coord = nodeCoordinates[index];
-                  const state = getNodeState(node.id);
-                  const isSelected = selectedNode?.id === node.id;
+                <div 
+                  className="relative flex-1 w-full max-w-[340px] sm:max-w-[360px] mx-auto transition-transform duration-200 z-10" 
+                  style={{ height: `${mapHeight}px`, transform: `scale(${mapZoom})`, transformOrigin: "top center" }}
+                >
                   
-                  return (
-                    <button
-                      key={node.id}
-                      style={{
-                        left: `${(coord.x / 400) * 100}%`,
-                        top: `${(coord.y / mapHeight) * 100}%`,
+                  {/* SVG path connector lines representing Silk Road */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 400 ${mapHeight}`} preserveAspectRatio="none">
+                    {/* Background full dash trail */}
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke="rgba(212, 175, 55, 0.15)"
+                      strokeWidth="4"
+                      className="trail-flow-background"
+                      strokeLinecap="round"
+                    />
+                    {/* Active completed route highlight path */}
+                    {completedPathD && (
+                      <path
+                        d={completedPathD}
+                        fill="none"
+                        stroke="url(#trail-gradient)"
+                        strokeWidth="5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="trail-flow-completed drop-shadow-[0_0_6px_rgba(0,168,150,0.4)]"
+                        filter="url(#glow-effect)"
+                      />
+                    )}
+                    <defs>
+                      <linearGradient id="trail-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#00A896" />
+                        <stop offset="100%" stopColor="#D4AF37" />
+                      </linearGradient>
+                      <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+
+                    {/* Glowing flow particles */}
+                    {completedPathD && (
+                      <>
+                        <circle r="4" fill="#00A896" className="drop-shadow-[0_0_6px_#00A896] pointer-events-none">
+                          <animateMotion dur="6s" repeatCount="indefinite" path={completedPathD} />
+                        </circle>
+                        <circle r="3" fill="#D4AF37" className="drop-shadow-[0_0_6px_#D4AF37] pointer-events-none">
+                          <animateMotion dur="6s" begin="2s" repeatCount="indefinite" path={completedPathD} />
+                        </circle>
+                        <circle r="3" fill="#F4F6F8" className="drop-shadow-[0_0_4px_#F4F6F8] pointer-events-none">
+                          <animateMotion dur="6s" begin="4s" repeatCount="indefinite" path={completedPathD} />
+                        </circle>
+                      </>
+                    )}
+                  </svg>
+
+                  {/* Animated Camel Caravan element traversing the Bezier path */}
+                  {camelCoords && (
+                    <div 
+                      style={{ 
+                        left: `${(camelCoords.x / 400) * 100}%`, 
+                        top: `${(camelCoords.y / mapHeight) * 100}%`,
+                        transform: "translate(-50%, -120%)",
                       }}
-                      onClick={() => handleNodeClick(node)}
-                      className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer focus:outline-none ${
-                        state === "locked" ? "cursor-not-allowed opacity-40" : ""
-                      }`}
-                      disabled={state === "locked"}
+                      className="absolute z-20 pointer-events-none camel-walk"
                     >
-                      {/* Node circle */}
-                      <div className={`h-10 w-10 rounded-full border flex items-center justify-center transition-all ${
-                        state === "completed"
-                          ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.3)] hover:scale-110"
-                          : state === "active"
-                          ? "bg-teal-spring/25 border-teal-spring text-teal-spring oasis-pulse scale-105"
-                          : state === "unlocked"
-                          ? "bg-indigo-oasis border-text-secondary/40 text-text-primary hover:border-gold-sand hover:scale-105"
-                          : "bg-midnight border-text-secondary/15 text-text-secondary"
-                      } ${isSelected ? "ring-2 ring-gold-sand ring-offset-2 ring-offset-midnight scale-115" : ""}`}>
-                        {state === "completed" ? (
-                          <CheckCircle className="h-5 w-5" />
-                        ) : state === "locked" ? (
-                          <Lock className="h-4 w-4 text-text-secondary/40" />
-                        ) : (
-                          <span className="text-xs font-bold text-text-primary">{index + 1}</span>
+                      <div className="bg-indigo-oasis/95 border border-gold-sand rounded-xl px-2 py-1 flex items-center space-x-1 shadow-[0_0_12px_rgba(212,175,55,0.4)] backdrop-blur-sm">
+                        <span 
+                          className="text-sm inline-block transition-transform duration-75"
+                          style={{
+                            transform: `rotate(${camelCoords.angle * 0.45}deg) ${
+                              // Default emoji faces left. If dx > 0 (moving right, angle in range [-90, 90]), flip it to face right.
+                              Math.abs(camelCoords.angle) < 90 ? "scaleX(-1)" : "scaleX(1)"
+                            }`
+                          }}
+                        >
+                          🐫
+                        </span>
+                        <span className="text-[8px] font-bold text-gold-sand tracking-wide uppercase font-serif">Caravan</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Render background decorations next to oases */}
+                  {nodes.map((_, index) => {
+                    const coord = nodeCoordinates[index];
+                    return renderDecorations(coord, index);
+                  })}
+
+                  {/* Oases node elements */}
+                  {nodes.map((node, index) => {
+                    const coord = nodeCoordinates[index];
+                    const state = getNodeState(node.id);
+                    const isSelected = selectedNode?.id === node.id;
+                    
+                    return (
+                      <div
+                        key={node.id}
+                        style={{
+                          position: "absolute",
+                          left: `${(coord.x / 400) * 100}%`,
+                          top: `${(coord.y / mapHeight) * 100}%`,
+                        }}
+                        className="z-10"
+                      >
+                        {/* Animated concentric ripples around active node */}
+                        {state === "active" && (
+                          <div className="absolute pointer-events-none w-16 h-16 -translate-x-1/2 -translate-y-1/2 z-0">
+                            <div className="absolute inset-0 rounded-full border border-teal-spring/60 animate-ping" style={{ animationDuration: "2.2s" }}></div>
+                            <div className="absolute inset-2 rounded-full border border-teal-spring/40 animate-pulse" style={{ animationDuration: "1.5s" }}></div>
+                            <div className="absolute -inset-2 rounded-full border border-teal-spring/20 animate-ping" style={{ animationDuration: "3.5s" }}></div>
+                          </div>
+                        )}
+
+                        <button
+                          id={state === "active" ? "active-node-btn" : undefined}
+                          onClick={() => handleNodeClick(node)}
+                          onMouseEnter={() => setHoveredNodeId(node.id)}
+                          onMouseLeave={() => setHoveredNodeId(null)}
+                          className={`-translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer focus:outline-none ${
+                            state === "locked" ? "cursor-not-allowed opacity-40" : ""
+                          }`}
+                          disabled={state === "locked"}
+                        >
+                          {/* Node circle */}
+                          <div className={`h-10 w-10 rounded-full border flex items-center justify-center transition-all ${
+                            state === "completed"
+                              ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.3)] hover:scale-110"
+                              : state === "active"
+                              ? "bg-teal-spring/25 border-teal-spring text-teal-spring oasis-pulse scale-105"
+                              : state === "unlocked"
+                              ? "bg-indigo-oasis border-text-secondary/40 text-text-primary hover:border-gold-sand hover:scale-105"
+                              : "bg-midnight border-text-secondary/15 text-text-secondary"
+                          } ${isSelected ? "ring-2 ring-gold-sand ring-offset-2 ring-offset-midnight scale-115" : ""}`}>
+                            {getNodeIcon(node, index, state)}
+                          </div>
+
+                          {/* Mini Tag Label */}
+                          <div className="mt-2 bg-midnight/90 border border-text-secondary/10 px-2 py-0.5 rounded text-[8px] font-bold text-text-primary max-w-[85px] truncate text-center group-hover:border-gold-sand/40 transition-colors shadow-sm font-sans uppercase">
+                            {node.title}
+                          </div>
+                        </button>
+
+                        {/* Interactive Hover Tooltip Preview */}
+                        {hoveredNodeId === node.id && (
+                          <div 
+                            style={{
+                              position: "absolute",
+                              left: index % 2 === 0 ? "12px" : "-12px",
+                              top: "-15px", 
+                              transform: index % 2 === 0 ? "translate(-20%, -100%)" : "translate(-80%, -100%)",
+                            }}
+                            className="z-50 w-52 bg-indigo-oasis/95 border border-gold-sand/40 rounded-xl p-3.5 shadow-[0_4px_25px_rgba(0,0,0,0.85)] pointer-events-none animate-fadeIn backdrop-blur-md text-left text-[9px] space-y-2"
+                          >
+                            <div className="flex justify-between items-center font-serif font-bold uppercase tracking-wider text-gold-sand">
+                              <span>Oasis {index + 1}</span>
+                              <span className={`text-[7px] px-1.5 py-0.5 rounded border ${
+                                node.difficulty === "beginner"
+                                  ? "bg-teal-spring/10 text-teal-spring border-teal-spring/30"
+                                  : node.difficulty === "intermediate"
+                                  ? "bg-gold-sand/10 text-gold-sand border-gold-sand/30"
+                                  : "bg-orange-flame/10 text-orange-flame border-orange-flame/30"
+                              }`}>
+                                {node.difficulty}
+                              </span>
+                            </div>
+                            <h4 className="text-text-primary font-bold font-sans text-[10px] leading-tight">{node.title}</h4>
+                            <p className="text-text-secondary leading-relaxed font-sans line-clamp-2">{node.description}</p>
+                            
+                            <div className="flex justify-between items-center text-[7.5px] text-text-secondary/80 font-bold border-t border-text-secondary/10 pt-2 mt-1">
+                              <span className="flex items-center text-gold-sand">🪙 +25 Coins</span>
+                              <span className="flex items-center text-teal-spring">🐪 {node.resources?.length || 0} Spices</span>
+                            </div>
+                            
+                            <div className="text-[7px] font-bold text-text-primary/70 flex items-center justify-between bg-midnight/40 px-2 py-0.5 rounded border border-text-secondary/5 mt-1.5">
+                              <span>Status</span>
+                              <span className={state === "completed" ? "text-gold-sand" : state === "active" ? "text-teal-spring animate-pulse" : "text-text-secondary"}>
+                                {state === "completed" ? "✓ Visited" : state === "active" ? "🔥 Active Oasis" : "locked"}
+                              </span>
+                            </div>
+                          </div>
                         )}
                       </div>
+                    );
+                  })}
 
-                      {/* Mini Tag Label */}
-                      <div className="mt-2 bg-midnight/90 border border-text-secondary/10 px-2 py-0.5 rounded text-[8px] font-bold text-text-primary max-w-[85px] truncate text-center group-hover:border-gold-sand/40 transition-colors shadow-sm font-sans uppercase">
-                        {node.title}
-                      </div>
-                    </button>
-                  );
-                })}
-
+                </div>
               </div>
             </div>
 
