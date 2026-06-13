@@ -153,14 +153,124 @@ if (!checkDb.assessments) {
   saveInMemoryDb(checkDb);
 }
 
+// Seed mock mentors in fallback store if empty
+if (!checkDb.mentors || checkDb.mentors.length === 0) {
+  checkDb.mentors = [
+    {
+      id: "d1245781-cc67-4221-88c9-aaee334455bb",
+      userId: "user_test_battuta",
+      specialization: "System Design & Global Cloud Architectures",
+      hourlyRate: 7500,
+      rating: "4.9",
+      bio: "Traveled across AWS clusters, configuring high-availability database regions and DynamoDB partitions globally."
+    },
+    {
+      id: "e2245782-dd68-4332-99da-bbee445566cc",
+      userId: "user_test_polo",
+      specialization: "Next.js 14, React & Core UX Craftsmanship",
+      hourlyRate: 6000,
+      rating: "5.0",
+      bio: "Crafts beautifully interactive fullstack client layouts. Passionate about animations and CSS design tokens."
+    },
+    {
+      id: "f3245783-ee69-4443-a0eb-ccee556677dd",
+      userId: "user_test_idrisi",
+      specialization: "Geographic Data Visualizations & Interactive Maps (Three.js/D3)",
+      hourlyRate: 8000,
+      rating: "4.8",
+      bio: "Charts path visualization routes. Expert in dynamic SVG bezier curves, interactive HTML Canvas, and WebGL map rendering."
+    },
+    {
+      id: "a4245784-ff70-4554-b1ec-ddee667788ee",
+      userId: "user_test_zhenghe",
+      specialization: "High-Throughput Databases & Distributed Ledger Transactions",
+      hourlyRate: 9000,
+      rating: "4.9",
+      bio: "Commands fleets of serverless Postgres databases. Expert in database partitioning, multi-region failovers, and ACID transactions."
+    }
+  ];
+  if (!checkDb.users) checkDb.users = [];
+  const mockUsers = [
+    { id: "user_test_battuta", email: "battuta@silkroad.com", role: "mentor", coinsBalance: 0, streakShields: 0 },
+    { id: "user_test_polo", email: "polo@silkroad.com", role: "mentor", coinsBalance: 0, streakShields: 0 },
+    { id: "user_test_idrisi", email: "idrisi@silkroad.com", role: "mentor", coinsBalance: 0, streakShields: 0 },
+    { id: "user_test_zhenghe", email: "zhenghe@silkroad.com", role: "mentor", coinsBalance: 0, streakShields: 0 }
+  ];
+  mockUsers.forEach((mu: any) => {
+    if (!checkDb.users.some((u: any) => u.id === mu.id)) {
+      checkDb.users.push({ ...mu, createdAt: new Date().toISOString() });
+    }
+  });
+  saveInMemoryDb(checkDb);
+}
+
 // Flag to switch to mock database if Postgres is offline
 let useMock = globalForDb.useMock ?? false;
 
 // Fast connection check on startup
 if (!useMock) {
   pool.query("SELECT 1")
-    .then(() => {
+    .then(async () => {
       console.log("✅ PostgreSQL is online. Using RDS Aurora DB.");
+      try {
+        const checkMentors = await realDb.select().from(schema.mentors).limit(1);
+        if (checkMentors.length === 0) {
+          console.log("🌱 Seeding default mentors in RDS PostgreSQL...");
+          
+          const seedUsers = [
+            { id: "user_test_battuta", email: "battuta@silkroad.com", role: "mentor" as const, coinsBalance: 0, streakShields: 0 },
+            { id: "user_test_polo", email: "polo@silkroad.com", role: "mentor" as const, coinsBalance: 0, streakShields: 0 },
+            { id: "user_test_idrisi", email: "idrisi@silkroad.com", role: "mentor" as const, coinsBalance: 0, streakShields: 0 },
+            { id: "user_test_zhenghe", email: "zhenghe@silkroad.com", role: "mentor" as const, coinsBalance: 0, streakShields: 0 },
+          ];
+          
+          for (const u of seedUsers) {
+            await realDb.insert(schema.users).values(u).onConflictDoNothing();
+          }
+          
+          const seedMentors = [
+            {
+              id: "d1245781-cc67-4221-88c9-aaee334455bb",
+              userId: "user_test_battuta",
+              specialization: "System Design & Global Cloud Architectures",
+              hourlyRate: 7500,
+              rating: "4.9",
+              bio: "Traveled across AWS clusters, configuring high-availability database regions and DynamoDB partitions globally."
+            },
+            {
+              id: "e2245782-dd68-4332-99da-bbee445566cc",
+              userId: "user_test_polo",
+              specialization: "Next.js 14, React & Core UX Craftsmanship",
+              hourlyRate: 6000,
+              rating: "5.0",
+              bio: "Crafts beautifully interactive fullstack client layouts. Passionate about animations and CSS design tokens."
+            },
+            {
+              id: "f3245783-ee69-4443-a0eb-ccee556677dd",
+              userId: "user_test_idrisi",
+              specialization: "Geographic Data Visualizations & Interactive Maps (Three.js/D3)",
+              hourlyRate: 8000,
+              rating: "4.8",
+              bio: "Charts path visualization routes. Expert in dynamic SVG bezier curves, interactive HTML Canvas, and WebGL map rendering."
+            },
+            {
+              id: "a4245784-ff70-4554-b1ec-ddee667788ee",
+              userId: "user_test_zhenghe",
+              specialization: "High-Throughput Databases & Distributed Ledger Transactions",
+              hourlyRate: 9000,
+              rating: "4.9",
+              bio: "Commands fleets of serverless Postgres databases. Expert in database partitioning, multi-region failovers, and ACID transactions."
+            }
+          ];
+          
+          for (const m of seedMentors) {
+            await realDb.insert(schema.mentors).values(m).onConflictDoNothing();
+          }
+          console.log("🌱 Default mentors seeded successfully in RDS PostgreSQL.");
+        }
+      } catch (seedErr: any) {
+        console.error("⚠️ Failed to seed default mentors in RDS PostgreSQL:", seedErr.message);
+      }
     })
     .catch((err) => {
       console.warn("⚠️ DATABASE_URL is not set or PostgreSQL connection refused. Falling back to local in-memory PostgreSQL simulation. Error:", err.message);

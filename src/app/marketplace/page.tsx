@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Compass, Shield, Award, Calendar, DollarSign, ArrowLeft, CheckCircle2, UserCheck, ShieldAlert, Sparkles, Coins, Flame, CreditCard, Loader } from "lucide-react";
+import { Compass, Shield, Award, Calendar, DollarSign, ArrowLeft, CheckCircle2, UserCheck, ShieldAlert, Sparkles, Coins, Flame, CreditCard, Loader, Search, Clock, Star, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
 
 interface Mentor {
   id: string;
@@ -23,34 +24,53 @@ export default function Marketplace() {
   const [streakShields, setStreakShields] = useState(0);
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
 
-  // Checkout states
+  // Mentors state
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [loadingMentors, setLoadingMentors] = useState(true);
+
+  // Filter and search states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  // Checkout & Booking states
   const [purchasedItem, setPurchasedItem] = useState<string | null>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<"idle" | "processing" | "success">("idle");
-  const [bookingDate, setBookingDate] = useState("");
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  
+  // Interactive Slots Selection states
+  const [dateOptions, setDateOptions] = useState<{ dayLabel: string; dateStr: string; dateObj: Date }[]>([]);
+  const [selectedDateIndex, setSelectedDateIndex] = useState<number | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "coins">("cash");
+
   const [isPortalLoading, setIsPortalLoading] = useState(false);
 
-  // Mock list of verified experts
-  const mentors: Mentor[] = [
-    {
-      id: "mentor-ibn-battuta",
-      name: "Mentor Ibn Battuta",
-      specialty: "System Design & Global Cloud Architectures",
-      hourlyRate: 7500, // $75.00
-      rating: 4.9,
-      bio: "Traveled across AWS clusters, configuring high-availability database regions and DynamoDB partitions globally.",
-      avatar: "I",
-    },
-    {
-      id: "mentor-marcopolo",
-      name: "Companion Marco Polo",
-      specialty: "Next.js 14, React & Core UX Craftsmanship",
-      hourlyRate: 6000, // $60.00
-      rating: 5.0,
-      bio: "Crafts beautifully interactive fullstack client layouts. Passionate about animations and CSS design tokens.",
-      avatar: "M",
-    },
+  // Time slot options
+  const timeSlots = [
+    { label: "09:00 AM UTC", value: "09:00" },
+    { label: "01:00 PM UTC", value: "13:00" },
+    { label: "05:00 PM UTC", value: "17:00" },
+    { label: "09:00 PM UTC", value: "21:00" },
   ];
+
+  // Generate date options dynamically (next 4 days)
+  useEffect(() => {
+    const opts = [];
+    const today = new Date();
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      let dayLabel = "";
+      if (i === 0) dayLabel = "Today";
+      else if (i === 1) dayLabel = "Tomorrow";
+      else {
+        dayLabel = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      }
+      const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
+      opts.push({ dayLabel, dateStr, dateObj: d });
+    }
+    setDateOptions(opts);
+  }, []);
 
   const fetchUserBillingProfile = async (uId: string) => {
     try {
@@ -66,12 +86,28 @@ export default function Marketplace() {
     }
   };
 
+  const fetchMentors = async () => {
+    setLoadingMentors(true);
+    try {
+      const response = await fetch("/api/mentors");
+      const data = await response.json();
+      if (data.success && data.mentors) {
+        setMentors(data.mentors);
+      }
+    } catch (err) {
+      console.error("Failed to fetch mentors:", err);
+    } finally {
+      setLoadingMentors(false);
+    }
+  };
+
   useEffect(() => {
     const savedUserId = localStorage.getItem("silkroad_userid");
     setUserId(savedUserId);
     if (savedUserId) {
       fetchUserBillingProfile(savedUserId);
     }
+    fetchMentors();
   }, []);
 
   // Handle Stripe Checkout redirects for Subscriptions or Coins purchases
@@ -101,6 +137,12 @@ export default function Marketplace() {
         console.log("[Marketplace] Mock checkout completed successfully.");
         await fetchUserBillingProfile(userId);
         setCheckoutStatus("success");
+        // Confetti feedback loop
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
       } else {
         // Redirect to real Stripe Checkout page
         window.location.href = data.url;
@@ -143,7 +185,7 @@ export default function Marketplace() {
     }
   };
 
-  // Handle coins-based microtransaction purchases
+  // Handle coins-based microtransaction purchases (like Streak Shield, verified badging)
   const handleCoinsPurchase = async (itemName: string, action: string, costInCoins: number) => {
     if (!userId) {
       alert("Traveler profile missing. Register through onboarding first.");
@@ -183,6 +225,12 @@ export default function Marketplace() {
         setSubscriptionStatus(data.user.subscriptionStatus);
       }
       setCheckoutStatus("success");
+      // Confetti feedback loop
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
     } catch (err: any) {
       console.error("Coins purchase failed:", err);
       setCheckoutStatus("idle");
@@ -195,8 +243,20 @@ export default function Marketplace() {
       alert("Traveler profile missing. Register through onboarding first.");
       return;
     }
-    if (!bookingDate) {
-      alert("Please select a valid scheduled datetime.");
+    if (selectedDateIndex === null || !selectedTimeSlot) {
+      alert("Please select a valid scheduled date and time slot.");
+      return;
+    }
+
+    const chosenDateOpt = dateOptions[selectedDateIndex];
+    // Create an ISO string for scheduledAt: YYYY-MM-DDT[time]:00.000Z
+    const scheduledAtStr = `${chosenDateOpt.dateStr}T${selectedTimeSlot}:00.000Z`;
+
+    // Calculate coin cost
+    const coinsCost = Math.round(mentor.hourlyRate / 10);
+
+    if (paymentMethod === "coins" && coinsBalance < coinsCost) {
+      alert(`Insufficient coins balance! This session costs ${coinsCost} coins, but you only have ${coinsBalance}.`);
       return;
     }
 
@@ -207,40 +267,136 @@ export default function Marketplace() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mentorId: "d1245781-cc67-4221-88c9-aaee334455bb", // hardcoded seed schema uuid
+          mentorId: mentor.id, // Dynamically maps database mentor ID
           menteeId: userId,
-          scheduledAt: bookingDate,
+          scheduledAt: scheduledAtStr,
         }),
       });
       const bookingData = await bookingResponse.json();
 
       if (!bookingResponse.ok) throw new Error(bookingData.error);
 
-      // 2. Charge transactional database ledger (using cash simulation)
-      await fetch("/api/transactions", {
+      // 2. Charge transactional database ledger
+      const txResponse = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
           amount: mentor.hourlyRate,
           type: "marketplace",
+          action: "book_mentor",
+          useCoins: paymentMethod === "coins",
         }),
       });
 
-      setPurchasedItem(`1-on-1 session with ${mentor.name}`);
+      const txData = await txResponse.json();
+      if (!txResponse.ok) throw new Error(txData.error);
+
+      // Sync state and show success modal
+      if (txData.user) {
+        setCoinsBalance(txData.user.coinsBalance);
+        setStreakShields(txData.user.streakShields);
+        setSubscriptionStatus(txData.user.subscriptionStatus);
+      } else {
+        await fetchUserBillingProfile(userId);
+      }
+
+      setPurchasedItem(`1-on-1 session with ${mentor.name} (${chosenDateOpt.dayLabel} at ${selectedTimeSlot} UTC)`);
       setCheckoutStatus("success");
+      
+      // Trigger canvas-confetti dopamine burst!
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+
       setSelectedMentor(null);
+      setSelectedDateIndex(null);
+      setSelectedTimeSlot(null);
     } catch (err: any) {
       alert(err.message || "Failed to finalize human mentor booking.");
       setCheckoutStatus("idle");
     }
   };
 
+  // Filter time slots based on today's remaining hours (in UTC)
+  const getAvailableTimeSlots = () => {
+    if (selectedDateIndex === 0) {
+      const currentHour = new Date().getUTCHours();
+      return timeSlots.filter((slot) => {
+        const slotHour = parseInt(slot.value.split(":")[0]);
+        return slotHour > currentHour;
+      });
+    }
+    return timeSlots;
+  };
+
+  // Filter mentors list based on search and selected specialty category
+  const filteredMentors = mentors.filter((mentor) => {
+    // Search Query check
+    const matchesSearch =
+      mentor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mentor.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mentor.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // Specialty category check
+    if (selectedCategory === "All") return true;
+    if (selectedCategory === "System Design") {
+      return mentor.specialty.toLowerCase().includes("system design") || mentor.specialty.toLowerCase().includes("cloud");
+    }
+    if (selectedCategory === "Next.js & React") {
+      return (
+        mentor.specialty.toLowerCase().includes("next.js") ||
+        mentor.specialty.toLowerCase().includes("react") ||
+        mentor.specialty.toLowerCase().includes("ux")
+      );
+    }
+    if (selectedCategory === "Maps & SVGs") {
+      return (
+        mentor.specialty.toLowerCase().includes("maps") ||
+        mentor.specialty.toLowerCase().includes("visualizations") ||
+        mentor.specialty.toLowerCase().includes("canvas") ||
+        mentor.specialty.toLowerCase().includes("three.js")
+      );
+    }
+    if (selectedCategory === "Database Ledgers") {
+      return (
+        mentor.specialty.toLowerCase().includes("database") ||
+        mentor.specialty.toLowerCase().includes("ledger") ||
+        mentor.specialty.toLowerCase().includes("transactions") ||
+        mentor.specialty.toLowerCase().includes("postgres")
+      );
+    }
+    return true;
+  });
+
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    return (
+      <div className="flex items-center space-x-0.5">
+        {[...Array(5)].map((_, i) => {
+          if (i < fullStars) {
+            return (
+              <Star key={i} className="h-3 w-3 text-gold-sand fill-gold-sand" />
+            );
+          }
+          return (
+            <Star key={i} className="h-3 w-3 text-text-secondary/35" />
+          );
+        })}
+        <span className="text-[10px] text-gold-sand font-bold ml-1.5">{rating.toFixed(1)}</span>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-midnight text-text-primary py-12 px-6 overflow-y-auto select-none">
+    <div className="min-h-screen bg-midnight text-text-primary py-12 px-6 overflow-y-auto select-none font-sans">
       
       {/* Back button */}
-      <div className="max-w-4xl mx-auto mb-8">
+      <div className="max-w-4xl mx-auto mb-8 animate-fadeIn">
         <button
           onClick={() => router.push("/dashboard")}
           className="flex items-center space-x-2 text-gold-sand hover:text-gold-sand/80 text-xs font-semibold uppercase tracking-wider cursor-pointer"
@@ -253,7 +409,7 @@ export default function Marketplace() {
       <div className="max-w-4xl mx-auto space-y-12">
         
         {/* Marketplace banner */}
-        <div className="glass-panel rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden premium-glow">
+        <div className="glass-panel rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden premium-glow animate-fadeIn">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gold-sand/5 rounded-full filter blur-3xl pointer-events-none"></div>
           
           <div className="flex-grow text-center md:text-left space-y-3 relative z-10">
@@ -279,12 +435,12 @@ export default function Marketplace() {
         </div>
 
         {/* Billing Status HUD */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto animate-fadeIn">
           {/* Subscription Status Widget */}
-          <div className={`glass-panel rounded-xl p-4 border flex flex-col justify-between items-center text-center relative overflow-hidden ${
+          <div className={`glass-panel rounded-xl p-4 border flex flex-col justify-between items-center text-center relative overflow-hidden transition-all duration-300 ${
             subscriptionStatus === "active" 
-              ? "border-gold-sand/40 bg-gold-sand/5 shadow-[0_0_15px_rgba(212,175,55,0.15)] animate-pulse" 
-              : "border-text-secondary/10"
+              ? "border-gold-sand/40 bg-gold-sand/5 shadow-[0_0_15px_rgba(212,175,55,0.15)]" 
+              : "border-text-secondary/10 hover:border-gold-sand/20"
           }`}>
             {subscriptionStatus === "active" && (
               <div className="absolute top-0 right-0 bg-gold-sand text-midnight text-[8px] font-black uppercase px-2 py-0.5 rounded-bl">PRO</div>
@@ -303,7 +459,7 @@ export default function Marketplace() {
                 <button
                   onClick={handleOpenBillingPortal}
                   disabled={isPortalLoading}
-                  className="w-full h-8 text-[10px] font-bold uppercase tracking-wider bg-gold-sand/20 hover:bg-gold-sand/35 text-gold-sand rounded-lg border border-gold-sand/30 transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                  className="w-full h-8 text-[10px] font-bold uppercase tracking-wider bg-gold-sand/10 hover:bg-gold-sand/25 text-gold-sand rounded-lg border border-gold-sand/30 transition-all flex items-center justify-center space-x-1 cursor-pointer"
                 >
                   {isPortalLoading ? <Loader className="h-3 w-3 animate-spin" /> : <span>Manage Billing</span>}
                 </button>
@@ -319,7 +475,7 @@ export default function Marketplace() {
           </div>
 
           {/* Coins Balance Widget */}
-          <div className="glass-panel rounded-xl p-4 border border-text-secondary/10 flex flex-col justify-between items-center text-center">
+          <div className="glass-panel rounded-xl p-4 border border-text-secondary/10 hover:border-gold-sand/20 transition-all duration-300 flex flex-col justify-between items-center text-center">
             <div className="space-y-1">
               <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block">Caravan Purse</span>
               <div className="flex items-center justify-center space-x-1.5">
@@ -333,7 +489,7 @@ export default function Marketplace() {
           </div>
 
           {/* Streak Shields Balance Widget */}
-          <div className="glass-panel rounded-xl p-4 border border-text-secondary/10 flex flex-col justify-between items-center text-center">
+          <div className="glass-panel rounded-xl p-4 border border-text-secondary/10 hover:border-orange-flame/20 transition-all duration-300 flex flex-col justify-between items-center text-center">
             <div className="space-y-1">
               <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block">Survival Inventory</span>
               <div className="flex items-center justify-center space-x-1.5">
@@ -348,7 +504,7 @@ export default function Marketplace() {
         </div>
 
         {/* B2C Items Marketplace Grid */}
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fadeIn">
           <div className="border-b border-gold-sand/15 pb-2">
             <h2 className="text-base font-bold font-serif text-gold-sand flex items-center">
               <Shield className="h-4 w-4 mr-2" />
@@ -426,7 +582,7 @@ export default function Marketplace() {
         </div>
 
         {/* Currency Shop Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fadeIn">
           <div className="border-b border-gold-sand/15 pb-2">
             <h2 className="text-base font-bold font-serif text-gold-sand flex items-center">
               <Coins className="h-4 w-4 mr-2" />
@@ -493,7 +649,7 @@ export default function Marketplace() {
         </div>
 
         {/* 1-on-1 Mentor Booking Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fadeIn">
           <div className="border-b border-gold-sand/15 pb-2">
             <h2 className="text-lg font-bold font-serif text-gold-sand flex items-center">
               <UserCheck className="h-5 w-5 mr-2" />
@@ -504,70 +660,279 @@ export default function Marketplace() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mentors.map((mentor) => (
-              <div key={mentor.id} className="glass-panel rounded-2xl p-6 flex flex-col space-y-4 justify-between border-teal-spring/10">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-gold-sand/20 text-gold-sand border border-gold-sand/40 flex items-center justify-center font-bold text-sm">
-                      {mentor.avatar}
+          {/* Specialty Filter and Search Section */}
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              {/* Search input */}
+              <div className="relative flex-grow max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search mentors by name, bio, or skill..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-indigo-oasis/40 border border-gold-sand/20 hover:border-gold-sand/40 focus:border-gold-sand focus:outline-none rounded-xl py-2 px-4 pl-10 text-xs text-text-primary placeholder-text-secondary transition-all"
+                />
+                <div className="absolute left-3.5 top-2.5 text-text-secondary">
+                  <Search className="h-4 w-4" />
+                </div>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-2 text-text-secondary hover:text-text-primary"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Total Mentors Indicator */}
+              <div className="text-[11px] text-text-secondary font-medium">
+                Found <span className="text-gold-sand font-bold">{filteredMentors.length}</span> verified experts
+              </div>
+            </div>
+
+            {/* Specialty Categories Filters */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: "All", label: "All Specialties" },
+                { id: "System Design", label: "System Design" },
+                { id: "Next.js & React", label: "Next.js & React" },
+                { id: "Maps & SVGs", label: "Maps & SVGs" },
+                { id: "Database Ledgers", label: "Database Ledgers" },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all duration-300 border cursor-pointer ${
+                    selectedCategory === cat.id
+                      ? "bg-gold-sand border-gold-sand text-midnight shadow-[0_0_10px_rgba(212,175,55,0.25)]"
+                      : "bg-indigo-oasis/30 border-text-secondary/15 text-text-secondary hover:text-text-primary hover:border-gold-sand/30"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mentor Cards Grid */}
+          {loadingMentors ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader className="h-8 w-8 animate-spin text-gold-sand" />
+              <p className="text-xs text-text-secondary font-medium uppercase tracking-widest">Sourcing mentors from PG database...</p>
+            </div>
+          ) : filteredMentors.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-text-secondary/10 rounded-2xl bg-indigo-oasis/10">
+              <UserCheck className="h-8 w-8 mx-auto text-text-secondary/40 mb-3" />
+              <p className="text-sm font-semibold text-text-primary">No Caravan mentors found matching search criteria.</p>
+              <p className="text-xs text-text-secondary mt-1">Try resetting the specialty category filters or adjusting search queries.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredMentors.map((mentor) => (
+                <div key={mentor.id} className="glass-panel rounded-2xl p-6 flex flex-col space-y-4 justify-between border-teal-spring/10 premium-glow transition-all duration-300 hover:scale-[1.01]">
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3.5">
+                      <div className="h-11 w-11 rounded-full bg-gold-sand/20 text-gold-sand border border-gold-sand/40 flex items-center justify-center font-bold text-base shadow-[0_0_10px_rgba(212,175,55,0.15)]">
+                        {mentor.avatar}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-text-primary">{mentor.name}</h4>
+                        <p className="text-[10px] text-teal-spring font-semibold uppercase tracking-wider mt-0.5">{mentor.specialty}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-text-primary">{mentor.name}</h4>
-                      <p className="text-[9px] text-teal-spring font-medium">{mentor.specialty}</p>
+                    <p className="text-xs text-text-secondary leading-relaxed font-sans min-h-[50px]">{mentor.bio}</p>
+                    <div className="pt-1">
+                      {renderStars(mentor.rating)}
                     </div>
                   </div>
-                  <p className="text-xs text-text-secondary leading-relaxed">{mentor.bio}</p>
-                  <div className="text-[10px] text-gold-sand font-semibold">★ {mentor.rating} Rating</div>
-                </div>
 
-                <div className="pt-4 border-t border-text-secondary/10 flex items-center justify-between">
-                  <span className="text-xs font-bold text-text-primary">
-                    ${(mentor.hourlyRate / 100).toFixed(2)} / hr
-                  </span>
-                  
-                  <button
-                    onClick={() => setSelectedMentor(mentor)}
-                    className="border border-gold-sand/30 hover:bg-gold-sand/10 text-gold-sand text-xs font-semibold px-4 py-2 rounded-xl transition-all"
-                  >
-                    Schedule Session
-                  </button>
+                  <div className="pt-4 border-t border-text-secondary/10 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-text-primary">
+                        ${(mentor.hourlyRate / 100).toFixed(2)} / hr
+                      </span>
+                      <span className="text-[9px] text-gold-sand font-medium mt-0.5">
+                        or {Math.round(mentor.hourlyRate / 10)} Coins
+                      </span>
+                    </div>
+                    
+                    <button
+                      onClick={() => setSelectedMentor(mentor)}
+                      className="border border-gold-sand/30 hover:bg-gold-sand/15 text-gold-sand text-xs font-semibold px-4.5 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      Schedule Session
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Schedule Modal */}
         {selectedMentor && (
-          <div className="fixed inset-0 bg-midnight/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="glass-panel max-w-md w-full rounded-2xl p-6 space-y-5 border-gold-sand/20 relative animate-fadeIn">
-              <h3 className="text-base font-bold font-serif text-gold-sand">Book Session: {selectedMentor.name}</h3>
-              <p className="text-xs text-text-secondary">
-                Select your scheduled date and time. Booking will deduct hourly rates directly onto our secure database ledger.
-              </p>
+          <div className="fixed inset-0 bg-midnight/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="glass-panel max-w-md w-full rounded-2xl p-6 space-y-6 border-gold-sand/35 relative animate-fadeIn shadow-[0_0_50px_rgba(212,175,55,0.1)]">
               
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-text-primary uppercase tracking-wider block">Expedition Date</label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  className="w-full bg-midnight border border-gold-sand/20 rounded-lg p-2.5 text-xs text-text-primary focus:outline-none focus:border-gold-sand"
-                />
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold font-serif text-gold-sand">Book Expedition</h3>
+                  <p className="text-[10.5px] text-text-secondary">
+                    with <span className="font-bold text-text-primary">{selectedMentor.name}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedMentor(null);
+                    setSelectedDateIndex(null);
+                    setSelectedTimeSlot(null);
+                  }}
+                  className="p-1 rounded-lg border border-text-secondary/15 text-text-secondary hover:text-text-primary hover:border-gold-sand/35 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-2">
+              {/* 1. Date selector pills */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block">Select Date</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {dateOptions.map((opt, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDateIndex(idx);
+                        setSelectedTimeSlot(null); // Reset time slot when date changes
+                      }}
+                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        selectedDateIndex === idx
+                          ? "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_10px_rgba(212,175,55,0.15)]"
+                          : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-gold-sand/30 hover:text-text-primary"
+                      }`}
+                    >
+                      <span className="text-[9px] font-black uppercase tracking-wider block">
+                        {idx === 0 ? "Today" : idx === 1 ? "Tomorrow" : opt.dayLabel.split(",")[0]}
+                      </span>
+                      <span className="text-[11px] font-bold mt-1">
+                        {idx < 2 ? opt.dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : opt.dayLabel.split(",")[1]?.trim()}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. Time selector grid */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block">Available Expeditions (UTC)</label>
+                {selectedDateIndex === null ? (
+                  <div className="text-center p-4 border border-dashed border-text-secondary/10 rounded-xl text-text-secondary text-xs bg-midnight/30">
+                    Choose a date first to reveal available oases.
+                  </div>
+                ) : getAvailableTimeSlots().length === 0 ? (
+                  <div className="text-center p-4 border border-dashed border-orange-flame/20 rounded-xl text-orange-flame text-xs bg-orange-flame/5">
+                    No remaining slots for today. Try tomorrow!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {getAvailableTimeSlots().map((slot) => (
+                      <button
+                        key={slot.value}
+                        type="button"
+                        onClick={() => setSelectedTimeSlot(slot.value)}
+                        className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-semibold cursor-pointer ${
+                          selectedTimeSlot === slot.value
+                            ? "bg-teal-spring/15 border-teal-spring text-teal-spring shadow-[0_0_10px_rgba(0,168,150,0.15)]"
+                            : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-teal-spring/30 hover:text-text-primary"
+                        }`}
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{slot.label.replace(" UTC", "")}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Currency payment toggle */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block">Select Payment Purser</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
+                      paymentMethod === "cash"
+                        ? "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_8px_rgba(212,175,55,0.1)]"
+                        : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-gold-sand/30 hover:text-text-primary"
+                    }`}
+                  >
+                    <CreditCard className="h-3.5 w-3.5" />
+                    <span>Pay with Cash</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("coins")}
+                    className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
+                      paymentMethod === "coins"
+                        ? "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_8px_rgba(212,175,55,0.1)]"
+                        : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-gold-sand/30 hover:text-text-primary"
+                    }`}
+                  >
+                    <Coins className="h-3.5 w-3.5" />
+                    <span>Use Gold Coins</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Receipt details breakdown */}
+              <div className="bg-midnight/70 border border-text-secondary/15 rounded-xl p-3.5 space-y-2 text-xs font-sans">
+                <div className="flex justify-between items-center text-text-secondary text-[11px]">
+                  <span>Base rate</span>
+                  <span>${(selectedMentor.hourlyRate / 100).toFixed(2)} / hr</span>
+                </div>
+                <div className="flex justify-between items-center text-text-secondary text-[11px]">
+                  <span>Est. Duration</span>
+                  <span>1.0 Hour</span>
+                </div>
+                <div className="border-t border-text-secondary/10 pt-2 flex justify-between items-center font-bold">
+                  <span className="text-text-primary">Total Price</span>
+                  {paymentMethod === "cash" ? (
+                    <span className="text-gold-sand">${(selectedMentor.hourlyRate / 100).toFixed(2)} USD</span>
+                  ) : (
+                    <span className="text-gold-sand flex items-center">
+                      <Coins className="h-3.5 w-3.5 mr-1" />
+                      {Math.round(selectedMentor.hourlyRate / 10)} Coins
+                    </span>
+                  )}
+                </div>
+                {paymentMethod === "coins" && (
+                  <div className="flex justify-between items-center text-[10px] text-text-secondary pt-1.5 border-t border-dashed border-text-secondary/10">
+                    <span>Purse Balance</span>
+                    <span className={`font-semibold ${coinsBalance >= Math.round(selectedMentor.hourlyRate / 10) ? "text-teal-spring" : "text-orange-flame animate-pulse"}`}>
+                      {coinsBalance} Coins
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 5. Booking Actions */}
+              <div className="flex space-x-3 pt-2">
                 <button
-                  onClick={() => setSelectedMentor(null)}
-                  className="px-4 py-2 border border-text-secondary/20 rounded-lg text-text-secondary text-xs hover:border-text-secondary/40 transition-colors"
+                  onClick={() => {
+                    setSelectedMentor(null);
+                    setSelectedDateIndex(null);
+                    setSelectedTimeSlot(null);
+                  }}
+                  className="flex-1 py-3 border border-text-secondary/15 rounded-xl text-text-secondary text-xs hover:border-text-secondary/30 transition-all font-bold cursor-pointer text-center"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleBookMentor(selectedMentor)}
-                  className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-4 py-2 rounded-xl transition-all"
+                  disabled={selectedDateIndex === null || !selectedTimeSlot || (paymentMethod === "coins" && coinsBalance < Math.round(selectedMentor.hourlyRate / 10))}
+                  className="flex-grow bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center"
                 >
                   Confirm Booking
                 </button>
@@ -578,18 +943,18 @@ export default function Marketplace() {
 
         {/* Success Modal */}
         {checkoutStatus === "success" && (
-          <div className="fixed inset-0 bg-midnight/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="glass-panel max-w-sm w-full rounded-2xl p-6 text-center space-y-4 border-teal-spring/30 animate-fadeIn">
-              <div className="inline-flex items-center justify-center p-3 rounded-full bg-teal-spring/10 text-teal-spring">
+          <div className="fixed inset-0 bg-midnight/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="glass-panel max-w-sm w-full rounded-2xl p-6 text-center space-y-4 border-teal-spring/30 animate-fadeIn shadow-[0_0_40px_rgba(0,168,150,0.1)]">
+              <div className="inline-flex items-center justify-center p-3 rounded-full bg-teal-spring/10 text-teal-spring border border-teal-spring/25 shadow-[0_0_12px_rgba(0,168,150,0.2)]">
                 <CheckCircle2 className="h-8 w-8" />
               </div>
               <h3 className="text-base font-bold font-serif text-gold-sand">Transaction Authenticated</h3>
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-text-secondary leading-relaxed">
                 Payment finalized successfully. Your item: <span className="font-semibold text-text-primary">"{purchasedItem}"</span> has been logged securely in PostgreSQL tables.
               </p>
               <button
                 onClick={() => setCheckoutStatus("idle")}
-                className="w-full bg-teal-spring hover:bg-teal-spring/90 text-midnight font-bold text-xs py-2 px-4 rounded-xl transition-all"
+                className="w-full bg-teal-spring hover:bg-teal-spring/90 text-midnight font-bold text-xs py-3 px-4 rounded-xl transition-all cursor-pointer shadow-md"
               >
                 Return to Bazaar
               </button>
@@ -599,8 +964,8 @@ export default function Marketplace() {
 
         {/* Processing Modal */}
         {checkoutStatus === "processing" && (
-          <div className="fixed inset-0 bg-midnight/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="glass-panel max-w-xs w-full rounded-2xl p-6 text-center space-y-3 border-gold-sand/20 animate-fadeIn">
+          <div className="fixed inset-0 bg-midnight/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="glass-panel max-w-xs w-full rounded-2xl p-6 text-center space-y-3 border-gold-sand/30 animate-fadeIn">
               <div className="flex justify-center">
                 <LoaderComponent />
               </div>

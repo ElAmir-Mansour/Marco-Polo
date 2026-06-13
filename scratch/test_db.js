@@ -9,8 +9,8 @@ async function main() {
   try {
     await client.connect();
     console.log("Success! Connected to RDS PostgreSQL.");
-    const res = await client.query('SELECT NOW()');
-    console.log("Current Time:", res.rows[0]);
+    const res = await client.query('SELECT * FROM mentors LIMIT 5');
+    console.log("Mentors in DB:", res.rows);
     await client.end();
   } catch (err) {
     console.error("Connection Failed:", err.message);

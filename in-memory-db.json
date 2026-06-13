@@ -74,9 +74,74 @@
       "onboardingChatState": "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Peace be upon you, traveler! 🐫 I am Master Marco Polo, your Caravan Master guide. What software engineering role is your target destination (e.g. Frontend, Backend, AI)?\"},{\"role\":\"user\",\"content\":\"Fullstack Developer 🚀\"},{\"role\":\"assistant\",\"content\":\"A splendid destination, traveler! To chart the most direct path across the sands, tell me, what is your current experience level on this journey? Are you a novice explorer, an experienced merchant, or a seasoned caravan leader?\"},{\"role\":\"user\",\"content\":\"Caravan Merchant (Intermediate) 🐫\"},{\"role\":\"assistant\",\"content\":\"To truly tailor our journey, brave traveler, what specific oases or ancient trade routes (technologies, frameworks, or areas of interest like Next.js, AWS, or databases) capture your attention most?\"},{\"role\":\"user\",\"content\":\"Next.js, React, Tailwind CSS\"},{\"role\":\"assistant\",\"content\":\"To truly guide you to your desired destination, brave traveler, what grand structure do you dream of building, or what treasure do you seek to unearth with these skills? What is your ultimate goal for this journey?\"},{\"role\":\"user\",\"content\":\"Build SaaS projects & scale apps\"},{\"role\":\"assistant\",\"content\":\"Great, let me prepare your learning path map!\"}],\"collected\":{\"targetRole\":\"Fullstack Developer\",\"experienceLevel\":\"intermediate\",\"interests\":[\"Next.js\",\"React\",\"Tailwind CSS\"],\"surveyAnswers\":\"Build SaaS projects & scale apps\"}}",
       "experienceLevel": "intermediate",
       "targetRole": "Fullstack Developer"
+    },
+    {
+      "id": "user_test_battuta",
+      "email": "battuta@silkroad.com",
+      "role": "mentor",
+      "coinsBalance": 0,
+      "streakShields": 0,
+      "createdAt": "2026-06-13T13:37:10.999Z"
+    },
+    {
+      "id": "user_test_polo",
+      "email": "polo@silkroad.com",
+      "role": "mentor",
+      "coinsBalance": 0,
+      "streakShields": 0,
+      "createdAt": "2026-06-13T13:37:11.000Z"
+    },
+    {
+      "id": "user_test_idrisi",
+      "email": "idrisi@silkroad.com",
+      "role": "mentor",
+      "coinsBalance": 0,
+      "streakShields": 0,
+      "createdAt": "2026-06-13T13:37:11.000Z"
+    },
+    {
+      "id": "user_test_zhenghe",
+      "email": "zhenghe@silkroad.com",
+      "role": "mentor",
+      "coinsBalance": 0,
+      "streakShields": 0,
+      "createdAt": "2026-06-13T13:37:11.000Z"
     }
   ],
-  "mentors": [],
+  "mentors": [
+    {
+      "id": "d1245781-cc67-4221-88c9-aaee334455bb",
+      "userId": "user_test_battuta",
+      "specialization": "System Design & Global Cloud Architectures",
+      "hourlyRate": 7500,
+      "rating": "4.9",
+      "bio": "Traveled across AWS clusters, configuring high-availability database regions and DynamoDB partitions globally."
+    },
+    {
+      "id": "e2245782-dd68-4332-99da-bbee445566cc",
+      "userId": "user_test_polo",
+      "specialization": "Next.js 14, React & Core UX Craftsmanship",
+      "hourlyRate": 6000,
+      "rating": "5.0",
+      "bio": "Crafts beautifully interactive fullstack client layouts. Passionate about animations and CSS design tokens."
+    },
+    {
+      "id": "f3245783-ee69-4443-a0eb-ccee556677dd",
+      "userId": "user_test_idrisi",
+      "specialization": "Geographic Data Visualizations & Interactive Maps (Three.js/D3)",
+      "hourlyRate": 8000,
+      "rating": "4.8",
+      "bio": "Charts path visualization routes. Expert in dynamic SVG bezier curves, interactive HTML Canvas, and WebGL map rendering."
+    },
+    {
+      "id": "a4245784-ff70-4554-b1ec-ddee667788ee",
+      "userId": "user_test_zhenghe",
+      "specialization": "High-Throughput Databases & Distributed Ledger Transactions",
+      "hourlyRate": 9000,
+      "rating": "4.9",
+      "bio": "Commands fleets of serverless Postgres databases. Expert in database partitioning, multi-region failovers, and ACID transactions."
+    }
+  ],
   "bookings": [],
   "transactions": [
     {

@@ -55,6 +55,19 @@ export async function POST(request: Request) {
             })
             .where(eq(users.id, userId));
         }
+      } else if (action === "book_mentor") {
+        if (useCoins) {
+          const coinsCost = Math.round(amount / 10);
+          if (userRecord.coinsBalance < coinsCost) {
+            return NextResponse.json({ error: `Insufficient coins. This session costs ${coinsCost} coins.` }, { status: 400 });
+          }
+          await db
+            .update(users)
+            .set({
+              coinsBalance: userRecord.coinsBalance - coinsCost,
+            })
+            .where(eq(users.id, userId));
+        }
       } else if (action === "buy_coins_50") {
         await db
           .update(users)
