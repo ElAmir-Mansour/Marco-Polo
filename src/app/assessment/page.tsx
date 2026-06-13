@@ -747,15 +747,26 @@ export default function AssessmentCenter() {
           
           {/* Welcome/Banner Intervention overlay if any */}
           {showResultScreen && latestScoreResult && (
-            <div className="lg:col-span-12 bg-gold-sand/15 border border-gold-sand/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-              <div className="flex items-start space-x-3 text-left">
-                <CheckCircle2 className="h-6 w-6 text-gold-sand flex-shrink-0 mt-0.5" />
+            <div className="lg:col-span-12 bg-gold-sand/15 border border-gold-sand/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn shadow-[0_0_20px_rgba(212,175,55,0.15)]">
+              <div className="flex items-start space-x-4 text-left">
+                <div className="flex-shrink-0 relative">
+                  <img
+                    src="/images/characters/marcopolo_thinking.png"
+                    alt="Marco Polo Thinking"
+                    className="h-16 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] camel-walk"
+                  />
+                </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gold-sand font-serif uppercase tracking-wide">Skill Diagnostic Complete!</h4>
-                  <p className="text-xs text-text-secondary leading-relaxed mt-1">
-                    You scored **{latestScoreResult.score} / 300** placing you in the **{latestScoreResult.percentile}th percentile** bracket.
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle2 className="h-4 w-4 text-gold-sand" />
+                    <h4 className="text-xs font-bold text-gold-sand font-serif uppercase tracking-wide">Skill Diagnostic Complete!</h4>
+                  </div>
+                  <p className="text-xs text-text-secondary leading-relaxed mt-1 font-sans">
+                    You scored <strong className="text-gold-sand">{latestScoreResult.score} / 300</strong> placing you in the <strong className="text-gold-sand">{latestScoreResult.percentile}th percentile</strong> bracket.
                     {latestScoreResult.optimized && (
-                      <span className="text-teal-spring font-semibold ml-1">🚀 Master Marco Polo has optimized your active learning roadmap to skip early basic oases!</span>
+                      <span className="text-teal-spring font-semibold block sm:inline sm:ml-1">
+                        🚀 Master Marco Polo has optimized your active learning roadmap to skip early basic oases!
+                      </span>
                     )}
                   </p>
                 </div>
