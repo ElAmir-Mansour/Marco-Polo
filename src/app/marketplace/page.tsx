@@ -253,14 +253,29 @@ export default function Marketplace() {
       <div className="max-w-4xl mx-auto space-y-12">
         
         {/* Marketplace banner */}
-        <div className="text-center space-y-3">
-          <div className="flex justify-center text-gold-sand animate-pulse">
-            <Sparkles className="h-10 w-10" />
+        <div className="glass-panel rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden premium-glow">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gold-sand/5 rounded-full filter blur-3xl pointer-events-none"></div>
+          
+          <div className="flex-grow text-center md:text-left space-y-3 relative z-10">
+            <div className="inline-flex text-gold-sand animate-pulse">
+              <Sparkles className="h-8 w-8" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-wider text-gold-sand">THE GREAT BAZAAR</h1>
+            <p className="text-xs text-text-secondary max-w-md mx-auto md:mx-0 leading-relaxed font-sans">
+              Trade coins and purchase premium enhancements. Secure transactions are recorded directly onto our AWS PostgreSQL relational ledger.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold font-serif tracking-wider text-gold-sand">THE GREAT BAZAAR</h1>
-          <p className="text-xs text-text-secondary max-w-lg mx-auto">
-            Trade coins and purchase premium enhancements. Secure transactions are recorded directly onto our AWS PostgreSQL relational ledger.
-          </p>
+
+          <div className="flex-shrink-0 relative z-10">
+            <img
+              src="/images/characters/marcopolo_bazaar.png"
+              alt="Marco Polo Shopkeeper"
+              className="h-32 sm:h-36 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(212,175,55,0.45)] hover:scale-105 transition-all duration-500 camel-walk"
+            />
+            <div className="absolute -top-3 -left-8 bg-indigo-oasis/95 border border-gold-sand/30 rounded-xl px-2.5 py-1 text-[9px] font-bold text-gold-sand shadow-lg animate-bounce select-none whitespace-nowrap backdrop-blur-sm">
+              Trade well, traveler! 🪙
+            </div>
+          </div>
         </div>
 
         {/* Billing Status HUD */}

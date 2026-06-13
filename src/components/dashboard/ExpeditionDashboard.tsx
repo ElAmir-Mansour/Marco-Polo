@@ -391,6 +391,7 @@ export default function ExpeditionDashboard() {
   const [validationStatus, setValidationStatus] = useState<"idle" | "success" | "failure">("idle");
   const [chatOpen, setChatOpen] = useState(true);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
+  const [victoryModalOpen, setVictoryModalOpen] = useState(false);
 
   // Phase 3 B2C Daily Companion States
   const [failCount, setFailCount] = useState(0);
@@ -967,6 +968,7 @@ export default function ExpeditionDashboard() {
         setProgress(data.progress);
         setStreak(data.streak);
         setConsoleLogs(prev => [...prev, "Ledger synchronized. Oasis successfully unlocked!"]);
+        setVictoryModalOpen(true);
       }
     } catch (err) {
       console.error("Failed to commit progress to databases:", err);
@@ -1162,11 +1164,20 @@ export default function ExpeditionDashboard() {
           {/* Guide Sentiment Frustration Intervention Banner */}
           {(failCount >= 2 || userFrustrated) && (
             <div className="lg:col-span-12 bg-orange-flame/10 border border-orange-flame/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn shadow-[0_0_15px_rgba(242,100,25,0.15)]">
-              <div className="flex items-start space-x-3 text-left">
-                <ShieldAlert className="h-5 w-5 text-orange-flame flex-shrink-0 mt-0.5 animate-pulse" />
+              <div className="flex items-start space-x-4 text-left">
+                <div className="flex-shrink-0 relative">
+                  <img
+                    src="/images/characters/marcopolo_concerned.png"
+                    alt="Marco Polo Concerned"
+                    className="h-16 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(242,100,25,0.4)] camel-walk"
+                  />
+                </div>
                 <div>
-                  <h4 className="text-xs font-bold text-orange-flame font-serif uppercase tracking-wide">Caravan Guide Intervention</h4>
-                  <p className="text-[10px] text-text-secondary leading-relaxed mt-0.5">
+                  <div className="flex items-center space-x-2">
+                    <ShieldAlert className="h-4 w-4 text-orange-flame animate-pulse" />
+                    <h4 className="text-xs font-bold text-orange-flame font-serif uppercase tracking-wide">Caravan Guide Intervention</h4>
+                  </div>
+                  <p className="text-[10px] text-text-secondary leading-relaxed mt-1">
                     Companion Guide Marco Polo reports your traveler status is distressed. Would you like to schedule an immediate 1-on-1 code matching review at 20% off, or lower your trail difficulty rank?
                   </p>
                 </div>
@@ -1851,6 +1862,76 @@ export default function ExpeditionDashboard() {
       </div>
     )}
 
+        {/* Victory Celebration Modal */}
+        {victoryModalOpen && (
+          <div className="fixed inset-0 bg-midnight/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="glass-panel max-w-md w-full rounded-2xl p-6 space-y-6 border-gold-sand/40 relative animate-fadeIn select-text text-center shadow-[0_0_30px_rgba(212,175,55,0.25)]">
+              <button
+                onClick={() => setVictoryModalOpen(false)}
+                className="absolute top-4 right-4 text-text-secondary hover:text-text-primary text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative">
+                  <img
+                    src="/images/characters/marcopolo_celebrating.png"
+                    alt="Marco Polo Celebrating"
+                    className="h-40 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.5)] camel-walk"
+                  />
+                  <div className="absolute -top-2 -right-4 bg-teal-spring text-midnight text-[9px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
+                    Victory! 🏆
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold font-serif text-gold-sand uppercase tracking-wider">Oasis Unlocked!</h3>
+                  <p className="text-xs text-text-secondary leading-relaxed max-w-sm mx-auto">
+                    Excellent work, traveler! You have successfully solved the <span className="text-teal-spring font-semibold">{selectedNode?.title}</span> challenge. Master Marco Polo is pleased with your solution!
+                  </p>
+                </div>
+
+                {streak && (
+                  <div className="bg-orange-flame/10 border border-orange-flame/30 rounded-xl p-3 w-full flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-left">
+                      <span className="text-lg">🔥</span>
+                      <div>
+                        <div className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Active Streak</div>
+                        <div className="text-xs font-bold text-orange-flame">{streak.currentStreak} {streak.currentStreak === 1 ? 'Day' : 'Days'}</div>
+                      </div>
+                    </div>
+                    {streak.currentStreak >= 7 && (
+                      <span className="text-[9px] bg-gold-sand text-midnight font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                        Golden Energy Activated
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setVictoryModalOpen(false)}
+                  className="flex-1 border border-text-secondary/20 hover:border-text-secondary/40 text-text-primary text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setVictoryModalOpen(false);
+                    setV0ModalOpen(true);
+                  }}
+                  className="flex-1 bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer animate-pulse"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Generate UI with v0</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Spotlight tutorial walkthrough modal overlay */}
         {tourStep !== null && (
           <div className="fixed inset-0 z-[9990] pointer-events-none animate-fadeIn">
@@ -1906,24 +1987,33 @@ export default function ExpeditionDashboard() {
                 <span>{tourStep} / 6</span>
               </div>
               
-              {/* Step details */}
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-bold font-serif text-text-primary uppercase tracking-wide">
-                  {tourStep === 1 && "Welcome, Traveler! 🐫"}
-                  {tourStep === 2 && "The Learning Trail Map 🗺️"}
-                  {tourStep === 3 && "Daily Streak Canteen 🔥"}
-                  {tourStep === 4 && "Challenge Sandbox 💻"}
-                  {tourStep === 5 && "Master Marco Polo Guidance 🧭"}
-                  {tourStep === 6 && "Caravanserai Community Forum 🎪"}
-                </h3>
-                <p className="text-xs text-text-secondary leading-relaxed font-sans">
-                  {tourStep === 1 && "Welcome to your Silk Road learning expedition trail. Let's take a quick 1-minute tour of your caravan instruments."}
-                  {tourStep === 2 && "This is your learning path. The bobbing Camel Caravan represents your active oasis node. Click unlocked nodes to select challenges along the Bezier trail."}
-                  {tourStep === 3 && "Keep your streak active by solving challenges daily. Your streak count dynamically scales the water level in your canteen. Complete 7+ consecutive days to unleash golden energy!"}
-                  {tourStep === 4 && "Write Javascript code to solve the active coding puzzle. The UNIX terminal console below prints sandbox execution results, worker timeouts, and syntax compile logs."}
-                  {tourStep === 5 && "Your companion Master Marco Polo guides you without spoiling solutions. Get hints, explanation logs, and real-time Big O complexity reviews automatically on submissions."}
-                  {tourStep === 6 && "Share scrolls, ask questions, or trade insights. If the NLP guide detects high frustration, it will offer customized interventions (e.g. mentor discounts or path simplification)."}
-                </p>
+              {/* Step details with Mascot */}
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 relative">
+                  <img
+                    src="/images/characters/marcopolo_welcome.png"
+                    alt="Marco Polo Tour Guide"
+                    className="h-16 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] flex-shrink-0 camel-walk"
+                  />
+                </div>
+                <div className="flex-1 space-y-1 min-w-0">
+                  <h3 className="text-xs font-bold font-serif text-text-primary uppercase tracking-wide">
+                    {tourStep === 1 && "Welcome, Traveler! 🐫"}
+                    {tourStep === 2 && "The Learning Trail Map 🗺️"}
+                    {tourStep === 3 && "Daily Streak Canteen 🔥"}
+                    {tourStep === 4 && "Challenge Sandbox 💻"}
+                    {tourStep === 5 && "Master Marco Polo Guidance 🧭"}
+                    {tourStep === 6 && "Caravanserai Community Forum 🎪"}
+                  </h3>
+                  <p className="text-[11px] text-text-secondary leading-relaxed font-sans">
+                    {tourStep === 1 && "Welcome to your Silk Road learning expedition trail. Let's take a quick 1-minute tour of your caravan instruments."}
+                    {tourStep === 2 && "This is your learning path. The bobbing Camel Caravan represents your active oasis node. Click unlocked nodes to select challenges along the Bezier trail."}
+                    {tourStep === 3 && "Keep your streak active by solving challenges daily. Your streak count dynamically scales the water level in your canteen. Complete 7+ consecutive days to unleash golden energy!"}
+                    {tourStep === 4 && "Write Javascript code to solve the active coding puzzle. The UNIX terminal console below prints sandbox execution results, worker timeouts, and syntax compile logs."}
+                    {tourStep === 5 && "Your companion Master Marco Polo guides you without spoiling solutions. Get hints, explanation logs, and real-time Big O complexity reviews automatically on submissions."}
+                    {tourStep === 6 && "Share scrolls, ask questions, or trade insights. If the NLP guide detects high frustration, it will offer customized interventions (e.g. mentor discounts or path simplification)."}
+                  </p>
+                </div>
               </div>
 
               {/* Navigation controls */}

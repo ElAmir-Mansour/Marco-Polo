@@ -86,6 +86,18 @@ export default function CaravanMasterChat({ userContext }: CaravanMasterChatProp
 
       {/* Message List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 select-text">
+        {messages.length <= 1 && (
+          <div className="flex flex-col items-center justify-center p-4 border border-gold-sand/10 rounded-xl bg-midnight/35 space-y-3 animate-fadeIn text-center">
+            <img
+              src="/images/characters/marcopolo_welcome.png"
+              alt="Marco Polo Guide"
+              className="h-32 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] camel-walk"
+            />
+            <div className="text-center text-[10px] text-text-secondary max-w-[200px] leading-relaxed font-sans">
+              Your companion Marco Polo is ready. Ask any question when you get stuck!
+            </div>
+          </div>
+        )}
         {messages.map((message) => {
           const isAssistant = message.role === "assistant";
           return (

@@ -399,9 +399,9 @@ export default function Onboarding() {
               <div className="space-y-5 flex-1 flex flex-col justify-center animate-fadeIn select-text">
                 <div className="text-center space-y-2">
                   <img
-                    src="/marcopolo-3d.png"
+                    src="/images/characters/marcopolo_welcome.png"
                     alt="Marco Polo Mascot"
-                    className="h-20 w-20 mx-auto object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.4)] camel-walk mb-2"
+                    className="h-28 w-auto mx-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2"
                   />
                   <h3 className="text-lg font-bold font-serif text-gold-sand uppercase tracking-wider">{generatedRoadmap.title}</h3>
                   <p className="text-xs text-text-secondary px-6 leading-relaxed">{generatedRoadmap.description}</p>
@@ -444,6 +444,18 @@ export default function Onboarding() {
               /* Chat log message feed */
               <div className="flex-1 flex flex-col justify-between min-h-0">
                 <div className="flex-1 overflow-y-auto pr-1 space-y-3 mb-4 select-text">
+                  {chatHistory.length <= 1 && (
+                    <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-oasis/40 border border-gold-sand/15 mb-4 animate-fadeIn space-y-2 text-center">
+                      <img
+                        src="/images/characters/marcopolo_welcome.png"
+                        alt="Marco Polo Mascot"
+                        className="h-28 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(212,175,55,0.45)] camel-walk"
+                      />
+                      <p className="text-[10px] text-text-secondary max-w-xs font-sans">
+                        Master Marco Polo will ask you a few questions to chart your personalized learning trail.
+                      </p>
+                    </div>
+                  )}
                   {chatHistory.map((msg, index) => {
                     const isAssistant = msg.role === "assistant";
                     return (
