@@ -31,6 +31,15 @@
       "targetRole": "Software Engineer",
       "currentStatus": "normal",
       "onboardingChatState": "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Peace be upon you, traveler! 🐫 I am the Caravan Master guide. What software engineering role is your target destination (e.g. Frontend, Backend, AI)?\"},{\"role\":\"user\",\"content\":\"Backend\"},{\"role\":\"assistant\",\"content\":\"A fine destination: \\\"Backend\\\"! Now, what is your experience level? Are you a Novice Traveler (beginner), Caravan Merchant (intermediate), or Expedition Master (advanced)?\"}],\"collected\":{\"targetRole\":\"Backend\"}}"
+    },
+    {
+      "id": "usr_k8tihsxjw",
+      "createdAt": "2026-06-13T01:12:21.584Z",
+      "email": "xxamirxx00@gmail.com",
+      "role": "traveler",
+      "coinsBalance": 100,
+      "streakShields": 0,
+      "onboardingChatState": "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Peace be upon you, traveler! 🐫 I am Master Marco Polo, your Caravan Master guide. What software engineering role is your target destination (e.g. Frontend, Backend, AI)?\"},{\"role\":\"user\",\"content\":\"Backend Engineer ⚙️\"},{\"role\":\"assistant\",\"content\":\"Excellent! To chart the most fitting route for your journey, tell me, esteemed traveler, what is your current experience level? Are you a seasoned explorer, an intermediate guide, or an eager apprentice just setting out?\"},{\"role\":\"user\",\"content\":\"Novice Traveler (Beginner) 🐣\"},{\"role\":\"assistant\",\"content\":\"Excellent, an eager apprentice! To truly chart your course, what specific wonders or skills spark your curiosity along the backend routes? Are there particular tools, languages, or lands (like databases or cloud services) you wish to explore?\"},{\"role\":\"user\",\"content\":\"Next.js, React, Tailwind CSS\"},{\"role\":\"assistant\",\"content\":\"A most intriguing path you've chosen! To truly tailor your journey, what grand project or specific achievement do you envision building with these skills? What is the ultimate destination of your learning journey?\"},{\"role\":\"user\",\"content\":\"Deploy Serverless systems\"},{\"role\":\"assistant\",\"content\":\"Great, let me prepare your learning path map!\"}],\"collected\":{\"targetRole\":\"Backend Engineer\",\"experienceLevel\":\"beginner\",\"interests\":[\"Next.js\",\"React\",\"Tailwind CSS\"],\"surveyAnswers\":\"Deploy Serverless systems\"}}"
     }
   ],
   "mentors": [],
@@ -85,5 +94,23 @@
       "sentiment": "frustrated"
     }
   ],
-  "assessments": []
+  "assessments": [],
+  "verification_tokens": [
+    {
+      "id": "id_x19mxu3vw",
+      "createdAt": "2026-06-13T01:11:08.184Z",
+      "email": "pcamir2002@gmail.com",
+      "token": "927950",
+      "expiresAt": "2026-06-13T01:15:53.163Z",
+      "attempts": 0
+    },
+    {
+      "id": "id_4vikbvnwo",
+      "createdAt": "2026-06-13T01:12:00.009Z",
+      "email": "xxamirxx00@gmailcom",
+      "token": "177780",
+      "expiresAt": "2026-06-13T01:17:00.008Z",
+      "attempts": 0
+    }
+  ]
 }

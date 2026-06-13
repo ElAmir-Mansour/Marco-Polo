@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getProgress, saveProgress, saveStreak, saveChallengeLog } from "@/lib/aws/dynamodb";
 import { checkAndDecayStreak } from "@/lib/services/streak";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +22,11 @@ export async function POST(request: Request) {
       isCorrect: !!isCorrect,
       feedbackText: feedbackText || "",
       timestamp: new Date().toISOString(),
+    });
+
+    // Load user profile details from PostgreSQL
+    let userRecord = await db.query.users.findFirst({
+      where: eq(users.id, userId),
     });
 
     // Load active progress
@@ -41,6 +49,21 @@ export async function POST(request: Request) {
       progress.lastAccessedTimestamp = new Date().toISOString();
       await saveProgress(progress);
       progressUpdated = true;
+
+      // Credit 25 coins to PostgreSQL profile for solving a new challenge
+      try {
+        if (userRecord) {
+          const newBalance = userRecord.coinsBalance + 25;
+          await db
+            .update(users)
+            .set({ coinsBalance: newBalance })
+            .where(eq(users.id, userId));
+          userRecord.coinsBalance = newBalance;
+          console.log(`[Economy] Credited 25 coins to user ${userId}. New balance: ${newBalance}`);
+        }
+      } catch (err) {
+        console.error("Failed to credit coins on challenge completion:", err);
+      }
     }
 
     // 2. Update Streak (Evaluate baseline using checkAndDecayStreak first)
@@ -79,6 +102,14 @@ export async function POST(request: Request) {
       streakUpdated,
       progress,
       streak,
+      user: userRecord ? {
+        id: userRecord.id,
+        email: userRecord.email,
+        role: userRecord.role,
+        coinsBalance: userRecord.coinsBalance,
+        streakShields: userRecord.streakShields,
+        subscriptionStatus: userRecord.subscriptionStatus || "inactive",
+      } : null,
     });
   } catch (error: any) {
     console.error("Complete node challenge API error:", error);

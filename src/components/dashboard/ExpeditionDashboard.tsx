@@ -392,6 +392,8 @@ export default function ExpeditionDashboard() {
   const [chatOpen, setChatOpen] = useState(true);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
   const [victoryModalOpen, setVictoryModalOpen] = useState(false);
+  const [camelCoords, setCamelCoords] = useState<{ x: number; y: number } | null>(null);
+  const prevActiveIndexRef = useRef<number>(0);
 
   // Phase 3 B2C Daily Companion States
   const [failCount, setFailCount] = useState(0);
@@ -967,6 +969,9 @@ export default function ExpeditionDashboard() {
       if (data.success) {
         setProgress(data.progress);
         setStreak(data.streak);
+        if (data.user) {
+          setUserProfile(data.user);
+        }
         setConsoleLogs(prev => [...prev, "Ledger synchronized. Oasis successfully unlocked!"]);
         setVictoryModalOpen(true);
       }
@@ -1033,17 +1038,21 @@ export default function ExpeditionDashboard() {
   // Math coordinates for oases bezier curve mapping
   const nodeSpacingY = 135;
   const mapHeight = nodes.length * nodeSpacingY + 80;
-  const nodeCoordinates = nodes.map((node, index) => {
-    const y = index * nodeSpacingY + 70;
-    // alternate x coordinates left and right
-    const x = index % 2 === 0 ? 90 : 310;
-    return { id: node.id, x, y };
-  });
+  
+  // Memoize nodeCoordinates to avoid constant recreations on unrelated state updates
+  const nodeCoordinates = useMemo(() => {
+    return (progress.nodes || []).map((node, index) => {
+      const y = index * nodeSpacingY + 70;
+      // alternate x coordinates left and right
+      const x = index % 2 === 0 ? 90 : 310;
+      return { id: node.id, x, y };
+    });
+  }, [progress.nodes]);
 
   // Calculate SVG paths
-  let pathD = "";
-  if (nodeCoordinates.length > 0) {
-    pathD = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
+  const pathD = useMemo(() => {
+    if (nodeCoordinates.length === 0) return "";
+    let d = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
     for (let i = 0; i < nodeCoordinates.length - 1; i++) {
       const curr = nodeCoordinates[i];
       const next = nodeCoordinates[i + 1];
@@ -1051,15 +1060,19 @@ export default function ExpeditionDashboard() {
       const cp1Y = curr.y + 70;
       const cp2X = next.x;
       const cp2Y = next.y - 70;
-      pathD += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
+      d += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
     }
-  }
+    return d;
+  }, [nodeCoordinates]);
 
-  let completedPathD = "";
-  const activeIndex = nodes.findIndex(n => n.id === progress.currentActiveNode);
-  const maxCompletedIndex = activeIndex !== -1 ? activeIndex : 0;
-  if (nodeCoordinates.length > 0 && maxCompletedIndex > 0) {
-    completedPathD = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
+  const activeIndex = useMemo(() => {
+    return (progress.nodes || []).findIndex(n => n.id === progress.currentActiveNode);
+  }, [progress.nodes, progress.currentActiveNode]);
+
+  const completedPathD = useMemo(() => {
+    const maxCompletedIndex = activeIndex !== -1 ? activeIndex : 0;
+    if (nodeCoordinates.length === 0 || maxCompletedIndex === 0) return "";
+    let d = `M ${nodeCoordinates[0].x} ${nodeCoordinates[0].y}`;
     for (let i = 0; i < maxCompletedIndex; i++) {
       const curr = nodeCoordinates[i];
       const next = nodeCoordinates[i + 1];
@@ -1067,9 +1080,83 @@ export default function ExpeditionDashboard() {
       const cp1Y = curr.y + 70;
       const cp2X = next.x;
       const cp2Y = next.y - 70;
-      completedPathD += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
+      d += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${next.x} ${next.y}`;
     }
-  }
+    return d;
+  }, [nodeCoordinates, activeIndex]);
+
+  // Cubic Bezier animation hook to traverse camel along path curves
+  useEffect(() => {
+    const targetIdx = activeIndex !== -1 ? activeIndex : 0;
+    const prevIdx = prevActiveIndexRef.current;
+
+    if (nodeCoordinates.length === 0) return;
+
+    if (prevIdx === targetIdx) {
+      const startNode = nodeCoordinates[targetIdx];
+      if (startNode) {
+        setCamelCoords({ x: startNode.x, y: startNode.y });
+      }
+      return;
+    }
+
+    let startTimestamp: number | null = null;
+    const duration = 1200; // Traversal duration
+    const stepsCount = Math.abs(targetIdx - prevIdx);
+    const isForward = targetIdx > prevIdx;
+    let animFrameId: number;
+
+    const animateCamel = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const elapsed = timestamp - startTimestamp;
+      const t = Math.min(elapsed / duration, 1);
+
+      const segmentIndex = Math.min(Math.floor(t * stepsCount), stepsCount - 1);
+      const localT = (t * stepsCount) - segmentIndex;
+
+      const currIdx = isForward ? prevIdx + segmentIndex : prevIdx - segmentIndex;
+      const nextIdx = isForward ? currIdx + 1 : currIdx - 1;
+
+      const p0 = nodeCoordinates[currIdx];
+      const p1 = nodeCoordinates[nextIdx];
+
+      if (p0 && p1) {
+        const cp1X = p0.x;
+        const cp1Y = p0.y + (isForward ? 70 : -70);
+        const cp2X = p1.x;
+        const cp2Y = p1.y + (isForward ? -70 : 70);
+
+        const mt = 1 - localT;
+        const x = Math.round(
+          Math.pow(mt, 3) * p0.x +
+          3 * Math.pow(mt, 2) * localT * cp1X +
+          3 * mt * Math.pow(localT, 2) * cp2X +
+          Math.pow(localT, 3) * p1.x
+        );
+        const y = Math.round(
+          Math.pow(mt, 3) * p0.y +
+          3 * Math.pow(mt, 2) * localT * cp1Y +
+          3 * mt * Math.pow(localT, 2) * cp2Y +
+          Math.pow(localT, 3) * p1.y
+        );
+
+        setCamelCoords({ x, y });
+      }
+
+      if (t < 1) {
+        animFrameId = requestAnimationFrame(animateCamel);
+      } else {
+        prevActiveIndexRef.current = targetIdx;
+        const endNode = nodeCoordinates[targetIdx];
+        if (endNode) {
+          setCamelCoords({ x: endNode.x, y: endNode.y });
+        }
+      }
+    };
+
+    animFrameId = requestAnimationFrame(animateCamel);
+    return () => cancelAnimationFrame(animFrameId);
+  }, [activeIndex, nodeCoordinates]);
 
   const activeCoord = nodeCoordinates[activeIndex !== -1 ? activeIndex : 0] || nodeCoordinates[0];
 
@@ -1235,7 +1322,7 @@ export default function ExpeditionDashboard() {
             <div id="tour-map" className="glass-panel rounded-2xl p-5 flex flex-col min-h-[420px] max-h-[580px] overflow-y-auto relative">
               <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase mb-6">Learning Trail Map</h3>
               
-              <div className="relative flex-1" style={{ height: `${mapHeight}px` }}>
+              <div className="relative flex-1 w-full max-w-[340px] sm:max-w-[360px] mx-auto" style={{ height: `${mapHeight}px` }}>
                 
                 {/* SVG path connector lines representing Silk Road */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 400 ${mapHeight}`} preserveAspectRatio="none">
@@ -1268,14 +1355,14 @@ export default function ExpeditionDashboard() {
                   </defs>
                 </svg>
 
-                {/* Animated Camel Caravan element sitting on active node */}
-                {activeCoord && (
+                {/* Animated Camel Caravan element traversing the Bezier path */}
+                {camelCoords && (
                   <div 
                     style={{ 
-                      left: `${(activeCoord.x / 400) * 100}%`, 
-                      top: `${(activeCoord.y / mapHeight) * 100}%`,
+                      left: `${(camelCoords.x / 400) * 100}%`, 
+                      top: `${(camelCoords.y / mapHeight) * 100}%`,
                     }}
-                    className="absolute z-20 pointer-events-none transition-all duration-1000 ease-in-out camel-walk -translate-x-1/2 -translate-y-[120%]"
+                    className="absolute z-20 pointer-events-none camel-walk -translate-x-1/2 -translate-y-[120%]"
                   >
                     <div className="bg-indigo-oasis/95 border border-gold-sand rounded-xl px-2 py-1 flex items-center space-x-1 shadow-[0_0_12px_rgba(212,175,55,0.4)] backdrop-blur-sm">
                       <span className="text-sm">🐫</span>
@@ -1364,9 +1451,14 @@ export default function ExpeditionDashboard() {
                             <span className="text-[7px] text-text-secondary/70 flex-shrink-0">{new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                           </div>
                           <p className="text-text-primary leading-relaxed break-words font-sans">{post.content}</p>
-                          {isFrustrated && (
-                            <span className="inline-flex items-center mt-1 text-[7px] text-orange-flame bg-orange-flame/10 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                              Distressed
+                          {post.sentiment === "frustrated" && (
+                            <span className="inline-flex items-center mt-1 text-[7px] text-orange-flame bg-orange-flame/10 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border border-orange-flame/20 animate-pulse">
+                              🔥 Distressed Traveler
+                            </span>
+                          )}
+                          {post.sentiment === "positive" && (
+                            <span className="inline-flex items-center mt-1 text-[7px] text-teal-spring bg-teal-spring/10 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border border-teal-spring/20">
+                              ☀️ Peaceful Voyage
                             </span>
                           )}
                         </div>
@@ -1889,6 +1981,7 @@ export default function ExpeditionDashboard() {
                   <h3 className="text-xl font-bold font-serif text-gold-sand uppercase tracking-wider">Oasis Unlocked!</h3>
                   <p className="text-xs text-text-secondary leading-relaxed max-w-sm mx-auto">
                     Excellent work, traveler! You have successfully solved the <span className="text-teal-spring font-semibold">{selectedNode?.title}</span> challenge. Master Marco Polo is pleased with your solution!
+                    <span className="text-gold-sand block font-bold mt-1.5 animate-pulse">🪙 +25 Caravan Coins earned!</span>
                   </p>
                 </div>
 
