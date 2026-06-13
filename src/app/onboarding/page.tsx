@@ -21,15 +21,21 @@ export default function Onboarding() {
   const [mockOtp, setMockOtp] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
 
-  // Pre-fill email from localStorage on mount
+  // Pre-fill email from localStorage on mount & check for existing session
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedEmail = localStorage.getItem("silkroad_email");
       if (savedEmail) {
         setEmail(savedEmail);
       }
+      
+      const savedUserId = localStorage.getItem("silkroad_userid");
+      const savedRoadmapId = localStorage.getItem("silkroad_roadmapid");
+      if (savedUserId && savedRoadmapId) {
+        router.push("/dashboard");
+      }
     }
-  }, []);
+  }, [router]);
 
   // OTP Countdown timer
   useEffect(() => {
@@ -159,12 +165,18 @@ export default function Onboarding() {
       }
       
       if (data.onboardingComplete) {
-        setOnboardingComplete(true);
-        setGeneratedRoadmap(data.roadmap);
         if (typeof window !== "undefined") {
           localStorage.setItem("silkroad_userid", data.userId);
           localStorage.setItem("silkroad_roadmapid", data.roadmapId);
           localStorage.setItem("silkroad_email", email);
+        }
+        
+        if (!isRestart) {
+          // If they already completed onboarding, bypass completion screen and route straight to dashboard
+          router.push("/dashboard");
+        } else {
+          setOnboardingComplete(true);
+          setGeneratedRoadmap(data.roadmap);
           triggerConfetti();
         }
       }
