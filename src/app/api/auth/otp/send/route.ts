@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificationTokens } from "@/lib/db/schema";
 import { sendOtpEmail } from "@/lib/services/email";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,23 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Rate-limiting / cooldown check: 30 seconds between requests
+    const existingToken = await db.query.verificationTokens.findFirst({
+      where: eq(verificationTokens.email, normalizedEmail),
+    });
+
+    if (existingToken) {
+      const timeSinceCreation = Date.now() - new Date(existingToken.createdAt).getTime();
+      const cooldownMs = 30 * 1000;
+      if (timeSinceCreation < cooldownMs) {
+        const remainingSec = Math.ceil((cooldownMs - timeSinceCreation) / 1000);
+        return NextResponse.json(
+          { error: `Please wait ${remainingSec} seconds before requesting a new code.` },
+          { status: 429 }
+        );
+      }
+    }
 
     // 1. Generate a secure 6-digit OTP code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -43,7 +61,17 @@ export async function POST(request: Request) {
       });
 
     // 4. Send email (mocked in dev/test, Resend API in production)
-    const result = await sendOtpEmail(normalizedEmail, otp);
+    // Avoid sending real emails for mock/test domains during development/testing
+    const isLocalDevMock = process.env.NODE_ENV === "development" && process.env.MOCK_EMAIL !== "false";
+    const isTestEmail = normalizedEmail.endsWith("@example.com") || 
+                        normalizedEmail.includes("test") || 
+                        normalizedEmail === "traveler@silkroad.com" ||
+                        process.env.MOCK_EMAIL === "true" ||
+                        isLocalDevMock;
+    
+    const result = isTestEmail 
+      ? { success: true, mock: true, error: undefined }
+      : await sendOtpEmail(normalizedEmail, otp);
 
     if (!result.success) {
       console.warn("⚠️ Email dispatch failed. Falling back to sandbox bypass. Error:", result.error);

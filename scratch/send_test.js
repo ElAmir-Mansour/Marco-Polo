@@ -15,9 +15,9 @@ async function sendTest() {
   });
 
   const command = new SendEmailCommand({
-    Source: "xxamirxx00@gmail.com",
+    Source: process.env.AWS_SES_FROM_EMAIL || "testtraveler@silkroad.com",
     Destination: {
-      ToAddresses: ["xxamirxx00@gmail.com"]
+      ToAddresses: [process.env.AWS_SES_FROM_EMAIL || "testtraveler@silkroad.com"]
     },
     Message: {
       Subject: { Data: "Test from Silk Road AWS SES", Charset: "UTF-8" },

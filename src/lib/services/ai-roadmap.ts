@@ -28,6 +28,7 @@ export interface GeneratedRoadmap {
   title: string;
   description: string;
   nodes: RoadmapNode[];
+  usingFallback?: boolean;
 }
 
 // Prompt template to generate roadmap
@@ -63,7 +64,10 @@ export async function generatePersonalizedRoadmap(
 ): Promise<GeneratedRoadmap> {
   if (!env.GEMINI_API_KEY) {
     console.warn("⚠️ GEMINI_API_KEY missing. Returning mock roadmap.");
-    return getMockRoadmap(role, level);
+    return {
+      ...getMockRoadmap(role, level),
+      usingFallback: true,
+    };
   }
 
   try {
@@ -84,7 +88,10 @@ export async function generatePersonalizedRoadmap(
     return JSON.parse(cleanedText) as GeneratedRoadmap;
   } catch (error) {
     console.error("AI Roadmap generation error, returning mock roadmap:", error);
-    return getMockRoadmap(role, level);
+    return {
+      ...getMockRoadmap(role, level),
+      usingFallback: true,
+    };
   }
 }
 

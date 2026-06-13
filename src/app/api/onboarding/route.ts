@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, roadmaps } from "@/lib/db/schema";
-import { saveProgress } from "@/lib/aws/dynamodb";
+import { saveProgress, getProgress } from "@/lib/aws/dynamodb";
 import { generatePersonalizedRoadmap } from "@/lib/services/ai-roadmap";
 import { eq } from "drizzle-orm";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
@@ -121,6 +121,28 @@ export async function POST(request: Request) {
 
     // 3. Bypass assessment if this is an initialization or loading request (no message provided)
     if (!message || !message.trim()) {
+      if (!restart) {
+        const existingRoadmap = await db.query.roadmaps.findFirst({
+          where: eq(roadmaps.createdBy, userRecord.id),
+        });
+
+        if (existingRoadmap) {
+          const progressData = await getProgress(userRecord.id, existingRoadmap.id);
+          return NextResponse.json({
+            success: true,
+            onboardingComplete: true,
+            userId: userRecord.id,
+            roadmapId: existingRoadmap.id,
+            roadmap: {
+              title: existingRoadmap.title,
+              description: existingRoadmap.description,
+              nodes: (progressData as any)?.nodes || [],
+            },
+            chatHistory: chatState.messages,
+          });
+        }
+      }
+
       if (!userRecord.onboardingChatState || restart) {
         await db
           .update(users)
@@ -144,6 +166,7 @@ export async function POST(request: Request) {
       nextQuestion: string;
       collected: any;
     };
+    let usingFallback = false;
 
     if (env.GEMINI_API_KEY && chatState.messages.filter(m => m.role === "user").length > 0) {
       try {
@@ -166,9 +189,11 @@ export async function POST(request: Request) {
       } catch (err) {
         console.error("Gemini assessment error, falling back to state machine:", err);
         assessment = getFallbackOnboarding(chatState.messages);
+        usingFallback = true;
       }
     } else {
       assessment = getFallbackOnboarding(chatState.messages);
+      usingFallback = true;
     }
 
     // 5. Append assistant next question
@@ -191,6 +216,10 @@ export async function POST(request: Request) {
         interests || [],
         surveyAnswers || ""
       );
+
+      if (personalizedRoadmap.usingFallback) {
+        usingFallback = true;
+      }
 
       const roadmapId = `${userRecord.id}_${(targetRole || "engineer").replace(/\s+/g, "_").toLowerCase()}_roadmap`;
 
@@ -240,6 +269,7 @@ export async function POST(request: Request) {
         roadmapId,
         roadmap: personalizedRoadmap,
         chatHistory: chatState.messages,
+        usingFallback,
       });
     }
 
@@ -249,6 +279,7 @@ export async function POST(request: Request) {
       onboardingComplete: false,
       userId: userRecord.id,
       chatHistory: chatState.messages,
+      usingFallback,
     });
   } catch (error: any) {
     console.error("Conversational onboarding API error:", error);

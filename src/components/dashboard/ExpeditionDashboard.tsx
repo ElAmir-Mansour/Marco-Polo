@@ -878,6 +878,12 @@ export default function ExpeditionDashboard() {
         setSelectedNode(active);
         setCodeSolution(active.challenge.boilerplate || "");
       }
+
+      // Sync roadmapId with localStorage if it was dynamically resolved by the backend
+      if (data.progress && data.progress.roadmapId) {
+        localStorage.setItem("silkroad_roadmapid", data.progress.roadmapId);
+        setRoadmapId(data.progress.roadmapId);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to sync details with AWS databases.");
     } finally {

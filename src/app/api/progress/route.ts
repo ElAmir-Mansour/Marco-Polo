@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getProgress } from "@/lib/aws/dynamodb";
 import { checkAndDecayStreak } from "@/lib/services/streak";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, roadmaps } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(request: Request) {
@@ -15,8 +15,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Missing required parameter: userId" }, { status: 400 });
     }
 
+    let activeRoadmapId = roadmapId;
+    if (!activeRoadmapId) {
+      const userRoadmap = await db.query.roadmaps.findFirst({
+        where: eq(roadmaps.createdBy, userId),
+      });
+      if (userRoadmap) {
+        activeRoadmapId = userRoadmap.id;
+      }
+    }
+
     // 1. Load progress and streaks (auto-decay/shield evaluation)
-    const progress = roadmapId ? await getProgress(userId, roadmapId) : null;
+    const progress = activeRoadmapId ? await getProgress(userId, activeRoadmapId) : null;
     const streak = await checkAndDecayStreak(userId);
 
     // 2. Load relational attributes from RDS Postgres (Subscriptions, Coins, etc.)

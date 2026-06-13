@@ -84,40 +84,9 @@ export async function sendOtpEmail(email: string, otp: string) {
   const resendKey = process.env.RESEND_API_KEY;
   const sesFromEmail = process.env.AWS_SES_FROM_EMAIL;
 
-  // If AWS SES configured email is present, prioritize it
-  if (sesFromEmail && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-    try {
-      const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
-      const sesClient = new SESClient({
-        region: process.env.AWS_REGION || "eu-north-1",
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        },
-      });
-
-      await sesClient.send(
-        new SendEmailCommand({
-          Source: sesFromEmail,
-          Destination: {
-            ToAddresses: [email],
-          },
-          Message: {
-            Subject: { Data: subject, Charset: "UTF-8" },
-            Body: {
-              Html: { Data: html, Charset: "UTF-8" },
-            },
-          },
-        })
-      );
-      return { success: true, mock: false };
-    } catch (error: any) {
-      console.error("AWS SES API error:", error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  const isMock = process.env.MOCK_EMAIL === "true" || !resendKey;
+  const isMock = process.env.MOCK_EMAIL === "true" || 
+                 (process.env.NODE_ENV === "development" && process.env.MOCK_EMAIL !== "false") ||
+                 (!resendKey && !(sesFromEmail && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY));
 
   if (isMock) {
     console.log(`
@@ -160,6 +129,39 @@ export async function sendOtpEmail(email: string, otp: string) {
     }
     
     return { success: true, mock: true };
+  }
+
+  // If AWS SES configured email is present, prioritize it
+  if (sesFromEmail && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    try {
+      const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
+      const sesClient = new SESClient({
+        region: process.env.AWS_REGION || "eu-north-1",
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        },
+      });
+
+      await sesClient.send(
+        new SendEmailCommand({
+          Source: sesFromEmail,
+          Destination: {
+            ToAddresses: [email],
+          },
+          Message: {
+            Subject: { Data: subject, Charset: "UTF-8" },
+            Body: {
+              Html: { Data: html, Charset: "UTF-8" },
+            },
+          },
+        })
+      );
+      return { success: true, mock: false };
+    } catch (error: any) {
+      console.error("AWS SES API error:", error);
+      return { success: false, error: error.message };
+    }
   }
 
   // Send real email via Resend API

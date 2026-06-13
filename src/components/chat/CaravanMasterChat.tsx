@@ -18,7 +18,7 @@ export default function CaravanMasterChat({ userContext }: CaravanMasterChatProp
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Initialize useChat with custom API route and context payload
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: {
@@ -149,6 +149,14 @@ export default function CaravanMasterChat({ userContext }: CaravanMasterChatProp
               <span className="h-1.5 w-1.5 rounded-full bg-gold-sand animate-bounce [animation-delay:0.2s]"></span>
               <span className="h-1.5 w-1.5 rounded-full bg-gold-sand animate-bounce [animation-delay:0.4s]"></span>
               <span className="ml-1 text-text-secondary/70">Master Marco Polo is writing...</span>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="p-3 rounded-xl bg-orange-flame/15 border border-orange-flame/35 text-orange-flame text-[10px] leading-relaxed flex items-start space-x-2.5 animate-fadeIn">
+            <ShieldAlert className="h-4 w-4 flex-shrink-0 animate-pulse text-orange-flame mt-0.5" />
+            <div>
+              <strong className="font-bold">Sandstorm Alert:</strong> Marco Polo cannot hear you due to heavy sandstorms (API Rate Limit / offline). Please try again shortly.
             </div>
           </div>
         )}
