@@ -393,10 +393,31 @@ export default function Marketplace() {
   };
 
   return (
-    <div className="min-h-screen bg-midnight text-text-primary py-12 px-6 overflow-y-auto select-none font-sans">
+    <div className="min-h-screen bg-midnight text-text-primary py-12 px-6 overflow-y-auto select-none font-sans relative">
+      {/* Immersive Starry Sky Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <svg className="absolute w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
+          {/* Twinkling stars */}
+          <circle cx="10%" cy="15%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "2.5s" }} />
+          <circle cx="35%" cy="8%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "4s" }} />
+          <circle cx="75%" cy="20%" r="1.5" fill="#D4AF37" className="animate-pulse" style={{ animationDuration: "3s" }} />
+          <circle cx="90%" cy="10%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "5s" }} />
+          <circle cx="50%" cy="25%" r="1.2" fill="#00A896" className="animate-pulse" style={{ animationDuration: "3.5s" }} />
+          <circle cx="20%" cy="40%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "2.2s" }} />
+          <circle cx="65%" cy="45%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "4.5s" }} />
+          <circle cx="80%" cy="60%" r="1.5" fill="#D4AF37" className="animate-pulse" style={{ animationDuration: "3.8s" }} />
+          <circle cx="15%" cy="75%" r="1.2" fill="#fff" className="animate-pulse" style={{ animationDuration: "2.7s" }} />
+          <circle cx="45%" cy="80%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "5.5s" }} />
+          <circle cx="85%" cy="85%" r="1" fill="#fff" className="animate-pulse" style={{ animationDuration: "3.2s" }} />
+          <circle cx="55%" cy="92%" r="1" fill="#00A896" className="animate-pulse" style={{ animationDuration: "4.2s" }} />
+        </svg>
+        {/* Soft background light blooms */}
+        <div className="absolute top-[20%] left-[10%] w-[400px] h-[400px] bg-teal-spring/5 rounded-full filter blur-[120px]"></div>
+        <div className="absolute bottom-[20%] right-[10%] w-[500px] h-[500px] bg-gold-sand/5 rounded-full filter blur-[150px]"></div>
+      </div>
       
       {/* Back button */}
-      <div className="max-w-4xl mx-auto mb-8 animate-fadeIn">
+      <div className="max-w-4xl mx-auto mb-8 animate-fadeIn relative z-10">
         <button
           onClick={() => router.push("/dashboard")}
           className="flex items-center space-x-2 text-gold-sand hover:text-gold-sand/80 text-xs font-semibold uppercase tracking-wider cursor-pointer"
@@ -406,7 +427,7 @@ export default function Marketplace() {
         </button>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-12">
+      <div className="max-w-4xl mx-auto space-y-12 relative z-10">
         
         {/* Marketplace banner */}
         <div className="glass-panel rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden premium-glow animate-fadeIn">
@@ -437,18 +458,18 @@ export default function Marketplace() {
         {/* Billing Status HUD */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto animate-fadeIn">
           {/* Subscription Status Widget */}
-          <div className={`glass-panel rounded-xl p-4 border flex flex-col justify-between items-center text-center relative overflow-hidden transition-all duration-300 ${
+          <div className={`glass-panel rounded-2xl p-5 border flex flex-col justify-between items-center text-center relative overflow-hidden transition-all duration-300 hover:scale-[1.02] ${
             subscriptionStatus === "active" 
-              ? "border-gold-sand/40 bg-gold-sand/5 shadow-[0_0_15px_rgba(212,175,55,0.15)]" 
-              : "border-text-secondary/10 hover:border-gold-sand/20"
+              ? "border-gold-sand/50 bg-gradient-to-b from-indigo-oasis/80 to-gold-sand/10 shadow-[0_4px_20px_rgba(212,175,55,0.2)]" 
+              : "border-text-secondary/10 hover:border-gold-sand/30 hover:shadow-[0_4px_15px_rgba(0,0,0,0.4)]"
           }`}>
             {subscriptionStatus === "active" && (
               <div className="absolute top-0 right-0 bg-gold-sand text-midnight text-[8px] font-black uppercase px-2 py-0.5 rounded-bl">PRO</div>
             )}
-            <div className="space-y-1">
-              <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block">Account Status</span>
+            <div className="space-y-1.5">
+              <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block font-sans">Account Status</span>
               <div className="flex items-center justify-center space-x-1.5">
-                <CreditCard className={`h-4 w-4 ${subscriptionStatus === "active" ? "text-gold-sand" : "text-text-secondary"}`} />
+                <CreditCard className={`h-4.5 w-4.5 ${subscriptionStatus === "active" ? "text-gold-sand" : "text-text-secondary"}`} />
                 <span className={`text-sm font-bold font-serif ${subscriptionStatus === "active" ? "text-gold-sand" : "text-text-primary"}`}>
                   {subscriptionStatus === "active" ? "Nomad Explorer" : "Traveler (Free)"}
                 </span>
@@ -459,14 +480,14 @@ export default function Marketplace() {
                 <button
                   onClick={handleOpenBillingPortal}
                   disabled={isPortalLoading}
-                  className="w-full h-8 text-[10px] font-bold uppercase tracking-wider bg-gold-sand/10 hover:bg-gold-sand/25 text-gold-sand rounded-lg border border-gold-sand/30 transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                  className="w-full h-8.5 text-[10px] font-bold uppercase tracking-wider bg-gold-sand/10 hover:bg-gold-sand/20 text-gold-sand rounded-lg border border-gold-sand/30 transition-all flex items-center justify-center space-x-1 cursor-pointer hover:shadow-[0_0_10px_rgba(212,175,55,0.1)]"
                 >
                   {isPortalLoading ? <Loader className="h-3 w-3 animate-spin" /> : <span>Manage Billing</span>}
                 </button>
               ) : (
                 <button
                   onClick={() => handleStripeCheckout("price_nomad_monthly_15", "Nomad Subscription Upgrade")}
-                  className="w-full h-8 text-[10px] font-bold uppercase tracking-wider bg-gold-sand hover:bg-gold-sand/90 text-midnight rounded-lg transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer"
+                  className="w-full h-8.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-gold-sand to-[#bfa032] hover:from-[#e5c249] hover:to-gold-sand text-midnight rounded-lg transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer font-serif"
                 >
                   <span>Upgrade ($15/mo)</span>
                 </button>
@@ -475,30 +496,30 @@ export default function Marketplace() {
           </div>
 
           {/* Coins Balance Widget */}
-          <div className="glass-panel rounded-xl p-4 border border-text-secondary/10 hover:border-gold-sand/20 transition-all duration-300 flex flex-col justify-between items-center text-center">
-            <div className="space-y-1">
-              <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block">Caravan Purse</span>
+          <div className="glass-panel rounded-2xl p-5 border border-text-secondary/10 hover:border-gold-sand/30 hover:shadow-[0_4px_15px_rgba(212,175,55,0.1)] transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between items-center text-center">
+            <div className="space-y-1.5">
+              <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block font-sans">Caravan Purse</span>
               <div className="flex items-center justify-center space-x-1.5">
-                <Coins className="h-4 w-4 text-gold-sand" />
+                <Coins className="h-5 w-5 text-gold-sand drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]" />
                 <span className="text-sm font-bold font-serif text-gold-sand">{coinsBalance} Coins</span>
               </div>
             </div>
-            <div className="mt-3 text-[9px] text-text-secondary font-medium">
-              Earn by solving trails or buy pouches below
+            <div className="mt-3 text-[10px] text-text-secondary font-medium leading-relaxed font-sans">
+              Earn by solving trails or trade at the purse pouch below
             </div>
           </div>
 
           {/* Streak Shields Balance Widget */}
-          <div className="glass-panel rounded-xl p-4 border border-text-secondary/10 hover:border-orange-flame/20 transition-all duration-300 flex flex-col justify-between items-center text-center">
-            <div className="space-y-1">
-              <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block">Survival Inventory</span>
+          <div className="glass-panel rounded-2xl p-5 border border-text-secondary/10 hover:border-orange-flame/30 hover:shadow-[0_4px_15px_rgba(242,100,25,0.1)] transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between items-center text-center">
+            <div className="space-y-1.5">
+              <span className="text-[9px] uppercase font-bold text-text-secondary tracking-widest block font-sans">Survival Inventory</span>
               <div className="flex items-center justify-center space-x-1.5">
-                <Flame className="h-4 w-4 text-orange-flame animate-pulse" />
+                <Flame className="h-5 w-5 text-orange-flame animate-pulse drop-shadow-[0_0_8px_rgba(242,100,25,0.4)]" />
                 <span className="text-sm font-bold font-serif text-orange-flame">{streakShields} Shields</span>
               </div>
             </div>
-            <div className="mt-3 text-[9px] text-text-secondary font-medium">
-              Protects canteens if daily challenge is missed
+            <div className="mt-3 text-[10px] text-text-secondary font-medium leading-relaxed font-sans">
+              Protects canteens automatically if daily challenge is missed
             </div>
           </div>
         </div>
@@ -506,74 +527,78 @@ export default function Marketplace() {
         {/* B2C Items Marketplace Grid */}
         <div className="space-y-6 animate-fadeIn">
           <div className="border-b border-gold-sand/15 pb-2">
-            <h2 className="text-base font-bold font-serif text-gold-sand flex items-center">
-              <Shield className="h-4 w-4 mr-2" />
-              Enhancements & Upgrades
+            <h2 className="text-lg font-bold font-serif text-gold-sand flex items-center tracking-wide">
+              <Shield className="h-5 w-5 mr-2" />
+              ENHANCEMENTS & UPGRADES
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Card 1: Streak Insurance */}
-            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow">
+            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow hover:border-orange-flame/30 hover:shadow-[0_0_20px_rgba(242,100,25,0.1)] transition-all duration-300">
               <div className="space-y-2">
                 <div className="h-10 w-10 rounded-lg bg-orange-flame/15 flex items-center justify-center text-orange-flame border border-orange-flame/30">
                   <Shield className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-bold font-serif text-text-primary">Caravan Streak Shield</h3>
-                <p className="text-xs text-text-secondary leading-relaxed">
+                <p className="text-xs text-text-secondary leading-relaxed font-sans">
                   Protect your water canteen streak! If you miss your daily coding challenge, this shield automatically consumes itself to save your streak history.
                 </p>
               </div>
               <div className="flex flex-col space-y-2.5 pt-4 border-t border-text-secondary/10">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] uppercase font-bold text-text-secondary">Shield Pricing</span>
+                <div className="flex justify-between items-center text-[10px] font-bold text-text-secondary">
+                  <span>Shield Pricing</span>
                   <span className="text-xs font-semibold text-gold-sand">50 Coins OR $4.99 USD</span>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCoinsPurchase("Caravan Streak Shield", "buy_shield", 50)}
-                    className="flex-1 border border-gold-sand/30 hover:bg-gold-sand/10 text-gold-sand text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                    className="flex-1 bg-midnight hover:bg-gold-sand/10 border border-gold-sand/30 hover:border-gold-sand/60 text-gold-sand text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1 hover:shadow-[0_0_10px_rgba(212,175,55,0.1)] font-sans"
                   >
-                    Buy with 50 Coins
+                    <Coins className="h-3.5 w-3.5" />
+                    <span>50 Coins</span>
                   </button>
                   <button
                     onClick={() => handleStripeCheckout("price_shield_499", "Caravan Streak Shield")}
-                    className="flex-1 bg-gold-sand hover:bg-gold-sand/90 text-midnight text-[10px] font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+                    className="flex-1 bg-gradient-to-r from-gold-sand to-[#bfa032] hover:from-[#e5c249] hover:to-gold-sand text-midnight text-[10px] font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center space-x-1 font-serif uppercase tracking-wider"
                   >
-                    Buy with $4.99 Cash
+                    <CreditCard className="h-3.5 w-3.5" />
+                    <span>$4.99 Cash</span>
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Certification Badges */}
-            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow">
+            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow hover:border-teal-spring/30 hover:shadow-[0_0_20px_rgba(0,168,150,0.1)] transition-all duration-300">
               <div className="space-y-2">
                 <div className="h-10 w-10 rounded-lg bg-teal-spring/15 flex items-center justify-center text-teal-spring border border-teal-spring/30">
                   <Award className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-bold font-serif text-text-primary">Verified Resume Badge</h3>
-                <p className="text-xs text-text-secondary leading-relaxed">
+                <p className="text-xs text-text-secondary leading-relaxed font-sans">
                   Earn an official, shareable certificate PDF highlighting your role IQ and completed Silk Road oases. Backed by mentor-certified evaluations.
                 </p>
               </div>
               <div className="flex flex-col space-y-2.5 pt-4 border-t border-text-secondary/10">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] uppercase font-bold text-text-secondary">Certificate Pricing</span>
+                <div className="flex justify-between items-center text-[10px] font-bold text-text-secondary">
+                  <span>Certificate Pricing</span>
                   <span className="text-xs font-semibold text-gold-sand">150 Coins OR $14.99 USD</span>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCoinsPurchase("Verified Resume Badge", "buy_badge", 150)}
-                    className="flex-1 border border-gold-sand/30 hover:bg-gold-sand/10 text-gold-sand text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                    className="flex-1 bg-midnight hover:bg-gold-sand/10 border border-gold-sand/30 hover:border-gold-sand/60 text-gold-sand text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1 hover:shadow-[0_0_10px_rgba(212,175,55,0.1)] font-sans"
                   >
-                    Buy with 150 Coins
+                    <Coins className="h-3.5 w-3.5" />
+                    <span>150 Coins</span>
                   </button>
                   <button
                     onClick={() => handleStripeCheckout("price_badge_1499", "Verified Resume Badge")}
-                    className="flex-1 bg-gold-sand hover:bg-gold-sand/90 text-midnight text-[10px] font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+                    className="flex-1 bg-gradient-to-r from-gold-sand to-[#bfa032] hover:from-[#e5c249] hover:to-gold-sand text-midnight text-[10px] font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center space-x-1 font-serif uppercase tracking-wider"
                   >
-                    Buy with $14.99 Cash
+                    <CreditCard className="h-3.5 w-3.5" />
+                    <span>$14.99 Cash</span>
                   </button>
                 </div>
               </div>
@@ -584,34 +609,34 @@ export default function Marketplace() {
         {/* Currency Shop Section */}
         <div className="space-y-6 animate-fadeIn">
           <div className="border-b border-gold-sand/15 pb-2">
-            <h2 className="text-base font-bold font-serif text-gold-sand flex items-center">
-              <Coins className="h-4 w-4 mr-2" />
-              Coin Purser (Purchase Coins)
+            <h2 className="text-lg font-bold font-serif text-gold-sand flex items-center tracking-wide">
+              <Coins className="h-5 w-5 mr-2" />
+              COIN PURSER (PURCHASE COINS)
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Card A: 50 Coins */}
-            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow">
+            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow hover:border-gold-sand/30 transition-all duration-300">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <div className="h-10 w-10 rounded-lg bg-gold-sand/15 flex items-center justify-center text-gold-sand border border-gold-sand/30">
                     <Coins className="h-5 w-5" />
                   </div>
                   <h3 className="text-base font-bold font-serif text-text-primary">Pouch of Gold Coins</h3>
-                  <p className="text-xs text-text-secondary leading-relaxed">
+                  <p className="text-xs text-text-secondary leading-relaxed font-sans">
                     Instantly add 50 Gold Coins to your Caravan purse. Best for one-off Streak Shields and quick tips.
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-black text-gold-sand block">50 COINS</span>
+                  <span className="text-xs font-black text-gold-sand block font-serif">50 COINS</span>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-text-secondary/10">
                 <span className="text-sm font-bold text-gold-sand">$1.99 USD</span>
                 <button
                   onClick={() => handleStripeCheckout("price_coins_50_2", "50 Gold Coins")}
-                  className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+                  className="bg-gradient-to-r from-gold-sand to-[#bfa032] hover:from-[#e5c249] hover:to-gold-sand text-midnight text-xs font-serif uppercase tracking-wider font-bold px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                 >
                   Purchase Pouch
                 </button>
@@ -619,27 +644,27 @@ export default function Marketplace() {
             </div>
 
             {/* Card B: 200 Coins */}
-            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow">
+            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4 premium-glow hover:border-gold-sand/30 transition-all duration-300">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <div className="h-10 w-10 rounded-lg bg-gold-sand/15 flex items-center justify-center text-gold-sand border border-gold-sand/30 relative">
-                    <div className="absolute -top-1.5 -right-1.5 bg-orange-flame text-text-primary font-bold text-[7px] px-1 rounded-full animate-bounce">SAVE</div>
+                    <div className="absolute -top-1.5 -right-1.5 bg-orange-flame text-text-primary font-bold text-[7px] px-1.5 py-0.5 rounded-full animate-bounce">SAVE</div>
                     <Coins className="h-5 w-5" />
                   </div>
                   <h3 className="text-base font-bold font-serif text-text-primary">Chest of Gold Coins</h3>
-                  <p className="text-xs text-text-secondary leading-relaxed">
+                  <p className="text-xs text-text-secondary leading-relaxed font-sans">
                     Stock up with 200 Gold Coins. Perfect for buying multiple Streak Shields, premium Certification badges, and tipping.
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-black text-gold-sand block">200 COINS</span>
+                  <span className="text-xs font-black text-gold-sand block font-serif">200 COINS</span>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-text-secondary/10">
                 <span className="text-sm font-bold text-gold-sand">$7.99 USD</span>
                 <button
                   onClick={() => handleStripeCheckout("price_coins_200_8", "200 Gold Coins")}
-                  className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+                  className="bg-gradient-to-r from-gold-sand to-[#bfa032] hover:from-[#e5c249] hover:to-gold-sand text-midnight text-xs font-serif uppercase tracking-wider font-bold px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                 >
                   Purchase Chest
                 </button>
@@ -719,7 +744,7 @@ export default function Marketplace() {
           {loadingMentors ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Loader className="h-8 w-8 animate-spin text-gold-sand" />
-              <p className="text-xs text-text-secondary font-medium uppercase tracking-widest">Sourcing mentors from PG database...</p>
+              <p className="text-xs text-text-secondary font-medium uppercase tracking-widest font-serif">Sourcing mentors from PG database...</p>
             </div>
           ) : filteredMentors.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-text-secondary/10 rounded-2xl bg-indigo-oasis/10">
@@ -730,15 +755,20 @@ export default function Marketplace() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredMentors.map((mentor) => (
-                <div key={mentor.id} className="glass-panel rounded-2xl p-6 flex flex-col space-y-4 justify-between border-teal-spring/10 premium-glow transition-all duration-300 hover:scale-[1.01]">
+                <div 
+                  key={mentor.id} 
+                  className="glass-panel rounded-2xl p-6 flex flex-col space-y-4 justify-between border border-text-secondary/10 premium-glow hover:border-teal-spring/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+                >
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3.5">
-                      <div className="h-11 w-11 rounded-full bg-gold-sand/20 text-gold-sand border border-gold-sand/40 flex items-center justify-center font-bold text-base shadow-[0_0_10px_rgba(212,175,55,0.15)]">
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gold-sand/20 to-teal-spring/20 text-gold-sand border-2 border-gold-sand/40 flex items-center justify-center font-bold text-lg shadow-[0_0_12px_rgba(212,175,55,0.2)]">
                         {mentor.avatar}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-text-primary">{mentor.name}</h4>
-                        <p className="text-[10px] text-teal-spring font-semibold uppercase tracking-wider mt-0.5">{mentor.specialty}</p>
+                        <h4 className="text-sm font-bold text-text-primary tracking-wide">{mentor.name}</h4>
+                        <span className="inline-block text-[9px] bg-teal-spring/10 text-teal-spring border border-teal-spring/30 font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5">
+                          {mentor.specialty}
+                        </span>
                       </div>
                     </div>
                     <p className="text-xs text-text-secondary leading-relaxed font-sans min-h-[50px]">{mentor.bio}</p>
@@ -752,14 +782,15 @@ export default function Marketplace() {
                       <span className="text-xs font-bold text-text-primary">
                         ${(mentor.hourlyRate / 100).toFixed(2)} / hr
                       </span>
-                      <span className="text-[9px] text-gold-sand font-medium mt-0.5">
+                      <span className="text-[9px] text-gold-sand font-medium mt-0.5 flex items-center">
+                        <Coins className="h-3 w-3 mr-0.5" />
                         or {Math.round(mentor.hourlyRate / 10)} Coins
                       </span>
                     </div>
                     
                     <button
                       onClick={() => setSelectedMentor(mentor)}
-                      className="border border-gold-sand/30 hover:bg-gold-sand/15 text-gold-sand text-xs font-semibold px-4.5 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm"
+                      className="bg-indigo-oasis hover:bg-gold-sand border border-gold-sand/30 hover:border-gold-sand text-gold-sand hover:text-midnight text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] font-serif uppercase tracking-wider"
                     >
                       Schedule Session
                     </button>
@@ -796,7 +827,7 @@ export default function Marketplace() {
 
               {/* 1. Date selector pills */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block">Select Date</label>
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block font-sans">Select Date</label>
                 <div className="grid grid-cols-4 gap-2">
                   {dateOptions.map((opt, idx) => (
                     <button
@@ -808,8 +839,8 @@ export default function Marketplace() {
                       }}
                       className={`p-2.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
                         selectedDateIndex === idx
-                          ? "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_10px_rgba(212,175,55,0.15)]"
-                          : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-gold-sand/30 hover:text-text-primary"
+                          ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.25)] scale-105"
+                          : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-gold-sand/40 hover:text-text-primary"
                       }`}
                     >
                       <span className="text-[9px] font-black uppercase tracking-wider block">
@@ -825,7 +856,7 @@ export default function Marketplace() {
 
               {/* 2. Time selector grid */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block">Available Expeditions (UTC)</label>
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block font-sans">Available Expeditions (UTC)</label>
                 {selectedDateIndex === null ? (
                   <div className="text-center p-4 border border-dashed border-text-secondary/10 rounded-xl text-text-secondary text-xs bg-midnight/30">
                     Choose a date first to reveal available oases.
@@ -843,8 +874,8 @@ export default function Marketplace() {
                         onClick={() => setSelectedTimeSlot(slot.value)}
                         className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-semibold cursor-pointer ${
                           selectedTimeSlot === slot.value
-                            ? "bg-teal-spring/15 border-teal-spring text-teal-spring shadow-[0_0_10px_rgba(0,168,150,0.15)]"
-                            : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-teal-spring/30 hover:text-text-primary"
+                            ? "bg-teal-spring/20 border-teal-spring text-teal-spring shadow-[0_0_12px_rgba(0,168,150,0.25)] scale-105"
+                            : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-teal-spring/40 hover:text-text-primary"
                         }`}
                       >
                         <Clock className="h-3.5 w-3.5" />
@@ -857,15 +888,15 @@ export default function Marketplace() {
 
               {/* 3. Currency payment toggle */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block">Select Payment Purser</label>
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block font-sans">Select Payment Purser</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("cash")}
                     className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
                       paymentMethod === "cash"
-                        ? "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_8px_rgba(212,175,55,0.1)]"
-                        : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-gold-sand/30 hover:text-text-primary"
+                        ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_10px_rgba(212,175,55,0.15)]"
+                        : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-gold-sand/40 hover:text-text-primary"
                     }`}
                   >
                     <CreditCard className="h-3.5 w-3.5" />
@@ -876,8 +907,8 @@ export default function Marketplace() {
                     onClick={() => setPaymentMethod("coins")}
                     className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
                       paymentMethod === "coins"
-                        ? "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_8px_rgba(212,175,55,0.1)]"
-                        : "bg-midnight/55 border-text-secondary/15 text-text-secondary hover:border-gold-sand/30 hover:text-text-primary"
+                        ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_10px_rgba(212,175,55,0.15)]"
+                        : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-gold-sand/40 hover:text-text-primary"
                     }`}
                   >
                     <Coins className="h-3.5 w-3.5" />
