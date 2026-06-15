@@ -251,3 +251,13 @@ We implemented a full-scale user interface and experience overhaul to elevate th
 - Replaced plain index numbering with `Lock` symbols on locked map oases nodes, cleaning up the visual trail progression.
 - Prepend study cards with Play, BookOpen, and FileText Lucide icons based on study types (video, article, docs).
 - Overhauled Caravanserai Community Forum boards with custom author initials avatar circles and distress accents (thick flame-orange left border triggers).
+
+### 5. Client-Side Synthesized Audio Engine & Ambient Windscapes
+- Developed a high-fidelity client-side audio synthesizer service in [audio.ts](file:///Users/elamir/Desktop/Marco_Polo/src/lib/services/audio.ts) utilizing the Web Audio API.
+- Generates looping ambient windscapes using lowpass-filtered white noise buffer sources modulated by a slow-frequency LFO, layered with resonant whistle filters representing desert wind howling.
+- Integrates zero-latency tactile sound effects:
+  - Oases Node Click: Metallic coin resonance using high-frequency oscillator combinations.
+  - Compile Success: Spacer C-Major bell chime arpeggio routed through feedback DelayNodes.
+  - Compile Failure: Heavy wooden thud generated via pitch-decay sweep and lowpass noise burst.
+  - Chat Dialogue Rustle: Paper rustle sweep via bandpass-filtered noise bursts.
+- Added an interactive speaker mute toggle in the main dashboard header, syncing mute preferences to `localStorage`.

@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Compass, BookOpen, Layers, Award, Terminal, Flame, CheckCircle, Lock, Play, ArrowRight, ChevronRight, HelpCircle, MessageSquare, Sparkles, ShieldAlert, Loader2, LogOut, Brain, FileText, Shield, Coins, X } from "lucide-react";
+import { Compass, BookOpen, Layers, Award, Terminal, Flame, CheckCircle, Lock, Play, ArrowRight, ChevronRight, HelpCircle, MessageSquare, Sparkles, ShieldAlert, Loader2, LogOut, Brain, FileText, Shield, Coins, X, Volume2, VolumeX } from "lucide-react";
 import CaravanMasterChat from "../chat/CaravanMasterChat";
 import * as acorn from "acorn";
 import confetti from "canvas-confetti";
 import { Logo } from "@/components/ui/Logo";
+import { audio } from "@/lib/services/audio";
 
 interface Resource {
   title: string;
@@ -404,6 +405,7 @@ export default function ExpeditionDashboard() {
   // Learning Trail Map Interactive States
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [mapZoom, setMapZoom] = useState(1);
+  const [soundMuted, setSoundMuted] = useState(true);
 
   useEffect(() => {
     if (!selectedNode || !codeSolution) return;
@@ -979,6 +981,7 @@ export default function ExpeditionDashboard() {
     
     setUserId(savedUserId);
     setRoadmapId(savedRoadmapId);
+    setSoundMuted(audio.getMuteStatus());
 
     if (savedUserId) {
       fetchProgressAndStreak(savedUserId, savedRoadmapId);
@@ -1179,6 +1182,7 @@ export default function ExpeditionDashboard() {
     const state = getNodeState(node.id);
     if (state === "locked") return; // cannot select locked oases
     
+    audio.playClick();
     setSelectedNode(node);
     setCodeSolution(node.challenge.boilerplate || "");
     setValidationStatus("idle");
@@ -1245,6 +1249,7 @@ export default function ExpeditionDashboard() {
       setConsoleLogs(prev => [...prev, `Syntax Check FAILED: ${err.message}`]);
       setValidationStatus("failure");
       setFailCount(prev => prev + 1);
+      audio.playThud();
       return;
     }
 
@@ -1258,6 +1263,7 @@ export default function ExpeditionDashboard() {
       ]);
       setValidationStatus("failure");
       setFailCount(prev => prev + 1);
+      audio.playThud();
       return;
     }
     setConsoleLogs(prev => [...prev, "Structural constraint check: PASSED."]);
@@ -1330,12 +1336,14 @@ export default function ExpeditionDashboard() {
       setConsoleLogs(prev => [...prev, `Runtime Check FAILED: ${executionResult.error}`]);
       setValidationStatus("failure");
       setFailCount(prev => prev + 1);
+      audio.playThud();
       return;
     }
 
     setConsoleLogs(prev => [...prev, "All test cases passed successfully!", "Syncing ledger write to databases..."]);
     setValidationStatus("success");
     setFailCount(0);
+    audio.playChime();
 
     // Confetti celebration!
     confetti({
@@ -1449,6 +1457,32 @@ export default function ExpeditionDashboard() {
         {/* Action controls */}
         <div className="flex items-center space-x-4">
           
+          {/* Sound Synthesizer Toggle */}
+          <button
+            onClick={() => {
+              const muted = audio.toggleMute();
+              setSoundMuted(muted);
+            }}
+            title={soundMuted ? "Unmute Ambient Soundscapes" : "Mute Ambient Soundscapes"}
+            className={`flex items-center justify-center w-[30px] h-[30px] rounded-xl border transition-all cursor-pointer ${
+              soundMuted
+                ? "border-gold-sand/20 text-text-secondary/70 hover:border-gold-sand/40 hover:text-gold-sand hover:bg-gold-sand/5"
+                : "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.15)]"
+            }`}
+          >
+            {soundMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <div className="relative flex items-center justify-center">
+                <Volume2 className="h-4 w-4" />
+                <span className="absolute -right-1 -top-1 flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-sand opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-gold-sand"></span>
+                </span>
+              </div>
+            )}
+          </button>
+
           {/* Survival streak widget with hydration wave animation */}
           {streak && (
             <CanteenWidget
@@ -1465,7 +1499,10 @@ export default function ExpeditionDashboard() {
 
           {/* Skill IQ Assessment Button */}
           <button
-            onClick={() => router.push("/assessment")}
+            onClick={() => {
+              audio.playClick();
+              router.push("/assessment");
+            }}
             className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-teal-spring/30 text-teal-spring hover:bg-teal-spring/10 transition-all cursor-pointer"
           >
             <Brain className="h-4 w-4" />
@@ -1474,7 +1511,10 @@ export default function ExpeditionDashboard() {
 
           {/* Marketplace Button */}
           <button
-            onClick={() => router.push("/marketplace")}
+            onClick={() => {
+              audio.playClick();
+              router.push("/marketplace");
+            }}
             className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-gold-sand/30 text-gold-sand hover:bg-gold-sand/10 transition-all cursor-pointer"
           >
             <Sparkles className="h-4 w-4" />
@@ -1484,6 +1524,7 @@ export default function ExpeditionDashboard() {
           {/* Leave Caravan Logout Button */}
           <button
             onClick={() => {
+              audio.playClick();
               if (typeof window !== "undefined") {
                 localStorage.removeItem("silkroad_userid");
                 localStorage.removeItem("silkroad_roadmapid");
@@ -1500,7 +1541,10 @@ export default function ExpeditionDashboard() {
 
           {/* Toggle AI guide button */}
           <button
-            onClick={() => setChatOpen(!chatOpen)}
+            onClick={() => {
+              setChatOpen(!chatOpen);
+              audio.playRustle();
+            }}
             className={`flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               chatOpen 
                 ? "bg-gold-sand text-midnight border-gold-sand" 

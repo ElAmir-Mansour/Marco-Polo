@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Send, Sparkles, MessageSquare, Compass, Terminal, ShieldAlert } from "lucide-react";
+import { audio } from "@/lib/services/audio";
 
 interface CaravanMasterChatProps {
   userContext: {
@@ -47,6 +48,16 @@ export default function CaravanMasterChat({ userContext, currentCode }: CaravanM
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Play rustle when Caravan Master finished streaming a message
+  useEffect(() => {
+    if (messages.length > 1) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === "assistant" && !isLoading) {
+        audio.playRustle();
+      }
+    }
+  }, [messages.length, isLoading]);
+
   const quickQuestions = [
     { text: "Give me a hint for this challenge", icon: Terminal },
     { text: "Explain the main concept of this oasis", icon: Sparkles },
@@ -56,6 +67,7 @@ export default function CaravanMasterChat({ userContext, currentCode }: CaravanM
   ];
 
   const handleQuickQuestionClick = (questionText: string) => {
+    audio.playRustle();
     if (questionText === "Explain/debug my code" && currentCode) {
       sendMessage({
         text: `Explain or debug my current code solution for the "${userContext.nodeTitle || "active"}" challenge:\n\n\`\`\`javascript\n${currentCode}\n\`\`\``
@@ -68,6 +80,7 @@ export default function CaravanMasterChat({ userContext, currentCode }: CaravanM
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    audio.playRustle();
     sendMessage({ text: input });
     setInput("");
   };
