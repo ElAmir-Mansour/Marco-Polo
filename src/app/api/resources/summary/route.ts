@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { env } from "@/lib/env";
-
-const google = createGoogleGenerativeAI({
-  apiKey: env.GEMINI_API_KEY || "",
-});
+import { getGoogleClient } from "@/lib/services/ai-client";
 
 const SUMMARY_PROMPT = (title: string, url: string, type: string) => `
 You are Master Marco Polo (the AI Caravan Master). Provide a 30-second bulleted summary of this learning resource:
@@ -42,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const { text } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: getGoogleClient()("gemini-2.5-flash"),
       prompt: SUMMARY_PROMPT(title, url, type || "documentation"),
       temperature: 0.2,
     });

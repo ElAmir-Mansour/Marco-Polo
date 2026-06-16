@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { env } from "@/lib/env";
-
-const google = createGoogleGenerativeAI({
-  apiKey: env.GEMINI_API_KEY || "",
-});
+import { getGoogleClient } from "@/lib/services/ai-client";
 
 const CODE_REVIEW_PROMPT = (code: string, question: string, functionName: string) => `
 You are Master Marco Polo (the AI Caravan Master Code Reviewer). 
@@ -47,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const { text } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: getGoogleClient()("gemini-2.5-flash"),
       prompt: CODE_REVIEW_PROMPT(codeSubmitted, question, functionName || "solution"),
       temperature: 0.2,
     });

@@ -1,10 +1,6 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText, convertToModelMessages } from "ai";
 import { env } from "@/lib/env";
-
-const google = createGoogleGenerativeAI({
-  apiKey: env.GEMINI_API_KEY,
-});
+import { getGoogleClient } from "@/lib/services/ai-client";
 
 const SYSTEM_PROMPT = (role: string, level: string, nodeTitle?: string) => `
 You are "Master Marco Polo" (the AI Caravan Master), a legendary software engineer who has traveled the engineering trails for decades. You guide travelers along the Silk Road of coding.
@@ -53,7 +49,7 @@ export async function POST(request: Request) {
 
     // Call streamText using gemini model
     const result = await streamText({
-      model: google("gemini-2.5-flash"),
+      model: getGoogleClient()("gemini-2.5-flash"),
       system: SYSTEM_PROMPT(role, level, nodeTitle),
       messages: coreMessages,
     });

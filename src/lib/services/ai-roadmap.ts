@@ -1,10 +1,6 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { env } from "../env";
-
-const google = createGoogleGenerativeAI({
-  apiKey: env.GEMINI_API_KEY,
-});
+import { getGoogleClient } from "./ai-client";
 
 export interface RoadmapNode {
   id: string;
@@ -75,7 +71,7 @@ export async function generatePersonalizedRoadmap(
 
   try {
     const { text } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: getGoogleClient()("gemini-2.5-flash"),
       prompt: ROADMAP_PROMPT(role, level, interests, surveyAnswers),
       temperature: 0.2,
     });

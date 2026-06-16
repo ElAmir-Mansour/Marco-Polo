@@ -4,13 +4,9 @@ import { users, roadmaps } from "@/lib/db/schema";
 import { saveProgress, getProgress } from "@/lib/aws/dynamodb";
 import { generatePersonalizedRoadmap } from "@/lib/services/ai-roadmap";
 import { eq } from "drizzle-orm";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { env } from "@/lib/env";
-
-const google = createGoogleGenerativeAI({
-  apiKey: env.GEMINI_API_KEY || "",
-});
+import { getGoogleClient } from "@/lib/services/ai-client";
 
 // Assesses the conversation using Gemini
 const ONBOARDING_ASSESSMENT_PROMPT = (chatHistory: string) => `
@@ -174,7 +170,7 @@ export async function POST(request: Request) {
           .map((m) => `${m.role === "assistant" ? "Master Marco Polo" : "Traveler"}: ${m.content}`)
           .join("\n");
         const { text } = await generateText({
-          model: google("gemini-2.5-flash"),
+          model: getGoogleClient()("gemini-2.5-flash"),
           prompt: ONBOARDING_ASSESSMENT_PROMPT(historyText),
           temperature: 0.1,
         });
