@@ -39,9 +39,12 @@ export default function Onboarding() {
       const savedRoadmapId = localStorage.getItem("silkroad_roadmapid");
       if (savedUserId && savedRoadmapId) {
         router.push("/dashboard");
-      } else if (savedUserId && savedEmail) {
-        // Auto-initialize returning session
-        handleStartOnboarding(undefined, false, savedEmail);
+      } else {
+        localStorage.removeItem("silkroad_tour_completed");
+        if (savedUserId && savedEmail) {
+          // Auto-initialize returning session
+          handleStartOnboarding(undefined, false, savedEmail);
+        }
       }
     }
   }, [router]);
@@ -177,6 +180,7 @@ export default function Onboarding() {
       if (typeof window !== "undefined") {
         localStorage.setItem("silkroad_userid", data.user.id);
         localStorage.setItem("silkroad_email", email);
+        localStorage.removeItem("silkroad_tour_completed");
       }
 
       // Success! Proceed to initialize onboarding chat
@@ -225,6 +229,7 @@ export default function Onboarding() {
           localStorage.setItem("silkroad_userid", data.userId);
           localStorage.setItem("silkroad_roadmapid", data.roadmapId);
           localStorage.setItem("silkroad_email", activeEmail);
+          localStorage.removeItem("silkroad_tour_completed");
         }
         
         if (!isRestart) {
@@ -277,6 +282,7 @@ export default function Onboarding() {
           localStorage.setItem("silkroad_userid", data.userId);
           localStorage.setItem("silkroad_roadmapid", data.roadmapId);
           localStorage.setItem("silkroad_email", email);
+          localStorage.removeItem("silkroad_tour_completed");
           triggerConfetti();
         }
       }

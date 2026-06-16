@@ -1485,16 +1485,18 @@ export default function ExpeditionDashboard() {
 
           {/* Survival streak widget with hydration wave animation */}
           {streak && (
-            <CanteenWidget
-              streak={streak}
-              userProfile={userProfile}
-              userId={userId}
-              onRefreshData={() => {
-                if (userId) {
-                  fetchProgressAndStreak(userId, roadmapId);
-                }
-              }}
-            />
+            <div id="tour-streak" className="inline-flex">
+              <CanteenWidget
+                streak={streak}
+                userProfile={userProfile}
+                userId={userId}
+                onRefreshData={() => {
+                  if (userId) {
+                    fetchProgressAndStreak(userId, roadmapId);
+                  }
+                }}
+              />
+            </div>
           )}
 
           {/* Skill IQ Assessment Button */}
@@ -1529,6 +1531,7 @@ export default function ExpeditionDashboard() {
                 localStorage.removeItem("silkroad_userid");
                 localStorage.removeItem("silkroad_roadmapid");
                 localStorage.removeItem("silkroad_email");
+                localStorage.removeItem("silkroad_tour_completed");
               }
               router.push("/onboarding");
             }}
@@ -1537,6 +1540,20 @@ export default function ExpeditionDashboard() {
           >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Leave Caravan</span>
+          </button>
+
+          {/* Help / Replay Tour Button */}
+          <button
+            onClick={() => {
+              audio.playClick();
+              localStorage.removeItem("silkroad_tour_completed");
+              setTourStep(1);
+            }}
+            title="Replay Onboarding Tour"
+            className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-gold-sand/30 text-gold-sand hover:bg-gold-sand/10 transition-all cursor-pointer"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Tour</span>
           </button>
 
           {/* Toggle AI guide button */}
