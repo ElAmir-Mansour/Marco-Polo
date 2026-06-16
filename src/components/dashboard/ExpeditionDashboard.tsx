@@ -2661,7 +2661,7 @@ export default function ExpeditionDashboard() {
                 width="100%"
                 height="100%"
                 mask="url(#spotlight-mask)"
-                className="backdrop-blur-[2px] transition-all duration-300"
+                className="transition-all duration-300"
               />
             </svg>
 
