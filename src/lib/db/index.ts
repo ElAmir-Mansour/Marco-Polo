@@ -16,6 +16,7 @@ const globalForDb = globalThis as unknown as {
 let pool: Pool;
 
 const dbUrlStr = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/silkroad";
+const isRemoteDb = dbUrlStr.includes(".rds.amazonaws.com") || dbUrlStr.includes(".supabase.co") || dbUrlStr.includes(".neon.tech");
 
 if (dbUrlStr.includes(".rds.amazonaws.com") && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
   try {
@@ -205,7 +206,16 @@ if (!checkDb.mentors || checkDb.mentors.length === 0) {
 }
 
 // Flag to switch to mock database if Postgres is offline
-let useMock = globalForDb.useMock ?? false;
+const forceMock = process.env.USE_MOCK_DB === "true";
+let useMock = forceMock || (!isRemoteDb && (globalForDb.useMock ?? false));
+
+if (forceMock) {
+  useMock = true;
+  globalForDb.useMock = true;
+} else if (!process.env.DATABASE_URL) {
+  useMock = true;
+  globalForDb.useMock = true;
+}
 
 // Fast connection check on startup
 if (!useMock) {
@@ -273,9 +283,14 @@ if (!useMock) {
       }
     })
     .catch((err) => {
-      console.warn("⚠️ DATABASE_URL is not set or PostgreSQL connection refused. Falling back to local in-memory PostgreSQL simulation. Error:", err.message);
-      useMock = true;
-      globalForDb.useMock = true;
+      console.warn("⚠️ DATABASE_URL is configured but connection check failed. Error:", err.message);
+      if (!isRemoteDb) {
+        console.warn("Falling back to local in-memory PostgreSQL simulation.");
+        useMock = true;
+        globalForDb.useMock = true;
+      } else {
+        console.error("❌ Remote database is unreachable. Dynamic fallback to mock database disabled for remote DB to prevent split-brain.");
+      }
     });
 }
 
@@ -540,6 +555,9 @@ function createBuilderProxy(realObj: any, chain: { prop: string | symbol; args: 
           }
           try {
             return target.then(onFulfilled, (err: any) => {
+              if (isRemoteDb) {
+                throw err;
+              }
               console.warn("⚠️ Drizzle query execution failed. Falling back to local in-memory simulation.", err.message);
               useMock = true;
               globalForDb.useMock = true;
@@ -550,6 +568,9 @@ function createBuilderProxy(realObj: any, chain: { prop: string | symbol; args: 
               return Promise.resolve(fallbackPromise).then(onFulfilled, onRejected);
             });
           } catch (err: any) {
+            if (isRemoteDb) {
+              throw err;
+            }
             console.warn("⚠️ Drizzle query execution failed. Falling back to local in-memory simulation.", err.message);
             useMock = true;
             globalForDb.useMock = true;
@@ -580,6 +601,9 @@ function createBuilderProxy(realObj: any, chain: { prop: string | symbol; args: 
             const nextRealObj = val.apply(target, args);
             return createBuilderProxy(nextRealObj, nextChain);
           } catch (err: any) {
+            if (isRemoteDb) {
+              throw err;
+            }
             console.warn("⚠️ Drizzle query building failed. Falling back to local in-memory simulation.", err.message);
             useMock = true;
             globalForDb.useMock = true;
@@ -628,6 +652,9 @@ export const db = new Proxy(realDb, {
                         if (resProp === "then") {
                           return function (onFulfilled: any, onRejected: any) {
                             return resTarget.then(onFulfilled, (err: any) => {
+                              if (isRemoteDb) {
+                                throw err;
+                              }
                               console.warn(`⚠️ Drizzle query.${String(qTable)}.${String(tFunc)} failed. Falling back to local in-memory simulation.`, err.message);
                               useMock = true;
                               globalForDb.useMock = true;
@@ -645,6 +672,9 @@ export const db = new Proxy(realDb, {
                   }
                   return result;
                 } catch (err: any) {
+                  if (isRemoteDb) {
+                    throw err;
+                  }
                   console.warn(`⚠️ Drizzle query.${String(qTable)}.${String(tFunc)} failed. Falling back to local in-memory simulation.`, err.message);
                   useMock = true;
                   globalForDb.useMock = true;
@@ -669,6 +699,9 @@ export const db = new Proxy(realDb, {
           const nextRealObj = val.apply(target, args);
           return createBuilderProxy(nextRealObj, chain);
         } catch (err: any) {
+          if (isRemoteDb) {
+            throw err;
+          }
           console.warn(`⚠️ Drizzle ${String(prop)} failed on build. Falling back to local in-memory simulation.`, err.message);
           useMock = true;
           globalForDb.useMock = true;

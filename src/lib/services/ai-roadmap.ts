@@ -47,7 +47,10 @@ Format the response as a single, valid JSON object with the following keys:
   - "description": detailed outline of what to learn
   - "difficulty": "beginner", "intermediate", or "advanced"
   - "order": integer index starting from 1
-  - "resources": list of 2 helpful public links (use real placeholders like "https://react.dev", "https://developer.mozilla.org" if not sure, but make the titles descriptive)
+  - "resources": an array of exactly 2 objects representing study guides/resources, where each object MUST contain:
+    - "title": a descriptive title of the resource (string, e.g. "React State Guide")
+    - "url": a valid public URL (string, e.g. "https://react.dev/learn")
+    - "type": the resource type (string, must be one of: "video", "article", "documentation")
   - "challenge": a small coding challenge for this node, containing:
     - "question": text prompt of what JavaScript/TypeScript function to write
     - "boilerplate": starter code structure

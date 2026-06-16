@@ -546,7 +546,7 @@ export default function Onboarding() {
           )
         ) : (
           /* STEP 2: Chat Onboarding interface */
-          <div className="space-y-4 flex flex-col h-[420px] justify-between">
+          <div className={`space-y-4 flex flex-col justify-between ${onboardingComplete ? "h-auto" : "h-[420px]"}`}>
             
             {/* Completion Screen milestones */}
             {onboardingComplete && generatedRoadmap ? (

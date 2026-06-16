@@ -2054,13 +2054,38 @@ export default function ExpeditionDashboard() {
                       Curated Study Spices
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {selectedNode.resources.map((res, idx) => {
+                      {(selectedNode.resources || []).map((res: any, idx: number) => {
+                        let resTitle = "";
+                        let resUrl = "";
+                        let resType: "video" | "article" | "documentation" = "documentation";
+
+                        if (typeof res === "string") {
+                          resUrl = res;
+                          try {
+                            const urlObj = new URL(res);
+                            resTitle = urlObj.hostname.replace("www.", "") + " link";
+                          } catch {
+                            resTitle = "Study Resource " + (idx + 1);
+                          }
+                        } else if (res && typeof res === "object") {
+                          resUrl = res.url || "";
+                          resTitle = res.title || "Study Resource " + (idx + 1);
+                          const rawType = res.type || "documentation";
+                          if (rawType === "video" || rawType === "article" || rawType === "documentation") {
+                            resType = rawType;
+                          }
+                        }
+
+                        if (!resUrl) return null;
+
+                        const normalizedRes = { title: resTitle, url: resUrl, type: resType };
+
                         let IconComponent = FileText;
                         let iconColor = "text-text-secondary";
-                        if (res.type === "video") {
+                        if (resType === "video") {
                           IconComponent = Play;
                           iconColor = "text-teal-spring fill-teal-spring/20";
-                        } else if (res.type === "article") {
+                        } else if (resType === "article") {
                           IconComponent = BookOpen;
                           iconColor = "text-gold-sand";
                         }
@@ -2068,15 +2093,15 @@ export default function ExpeditionDashboard() {
                         return (
                           <button
                             key={idx}
-                            onClick={(e) => handleResourceClick(e, res)}
+                            onClick={(e) => handleResourceClick(e, normalizedRes)}
                             className="flex items-center space-x-2.5 p-2 rounded-xl bg-indigo-oasis/40 border border-text-secondary/5 hover:border-gold-sand/35 hover:bg-indigo-oasis/80 transition-all text-[10px] text-text-primary cursor-pointer text-left w-full group"
                           >
                             <div className={`p-1.5 rounded-lg bg-midnight/80 border border-text-secondary/10 flex-shrink-0 group-hover:border-gold-sand/20 ${iconColor}`}>
                               <IconComponent className="h-3.5 w-3.5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="truncate font-semibold text-text-primary group-hover:text-gold-sand transition-colors">{res.title}</p>
-                              <p className="text-[7.5px] uppercase font-bold text-text-secondary/65 tracking-wider">{res.type}</p>
+                              <p className="truncate font-semibold text-text-primary group-hover:text-gold-sand transition-colors">{resTitle}</p>
+                              <p className="text-[7.5px] uppercase font-bold text-text-secondary/65 tracking-wider">{resType}</p>
                             </div>
                           </button>
                         );
