@@ -2330,7 +2330,7 @@ export default function ExpeditionDashboard() {
                   </div>
 
                   {/* Sandbox code editor */}
-                  <div className="flex-1 min-h-[220px] flex flex-col rounded-xl overflow-hidden border border-text-secondary/20 bg-midnight text-text-primary shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)]">
+                  <div className="h-[480px] flex flex-col rounded-xl overflow-hidden border border-text-secondary/20 bg-midnight text-text-primary shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)]">
                     <div className="bg-indigo-oasis/60 px-4 py-2 border-b border-text-secondary/15 flex items-center justify-between text-[10px] text-text-secondary font-sans">
                       <span className="font-semibold text-text-primary/95">JavaScript Sandbox Editor</span>
                       <button
