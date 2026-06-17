@@ -4,15 +4,25 @@ import { checkAndDecayStreak } from "@/lib/services/streak";
 import { db } from "@/lib/db";
 import { users, roadmaps } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 
 export async function GET(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
     const roadmapId = searchParams.get("roadmapId");
 
     if (!userId) {
       return NextResponse.json({ error: "Missing required parameter: userId" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden. You cannot view progress for other users." }, { status: 403 });
     }
 
     let activeRoadmapId = roadmapId;

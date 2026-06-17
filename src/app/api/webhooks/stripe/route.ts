@@ -24,6 +24,12 @@ export async function POST(request: Request) {
     if (webhookSecret) {
       event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
     } else {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { error: "Stripe configuration error: missing webhook secret." },
+          { status: 500 }
+        );
+      }
       // In local development without webhook secret, we skip signature checks for ease of mock testing
       event = JSON.parse(payload) as Stripe.Event;
     }

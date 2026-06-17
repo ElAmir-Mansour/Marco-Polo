@@ -4,14 +4,24 @@ import { checkAndDecayStreak } from "@/lib/services/streak";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId, roadmapId, nodeId, challengeId, codeSubmitted, isCorrect, feedbackText } = body;
 
     if (!userId || !roadmapId || !nodeId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden. You cannot complete milestones for other users." }, { status: 403 });
     }
 
     // 1. Log challenge submission

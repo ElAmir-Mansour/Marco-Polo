@@ -63,23 +63,21 @@ export async function POST(request: Request) {
     // 4. Send email (mocked in dev/test, Resend API in production)
     // Avoid sending real emails for mock/test domains during development/testing
     const isLocalDevMock = process.env.NODE_ENV === "development" && process.env.MOCK_EMAIL !== "false";
-    const isTestEmail = normalizedEmail.endsWith("@example.com") || 
+    const isTestEmail = isLocalDevMock && (
+                        normalizedEmail.endsWith("@example.com") || 
                         normalizedEmail.includes("test") || 
                         normalizedEmail === "traveler@silkroad.com" ||
-                        process.env.MOCK_EMAIL === "true" ||
-                        isLocalDevMock;
+                        process.env.MOCK_EMAIL === "true");
     
     const result = isTestEmail 
       ? { success: true, mock: true, error: undefined }
       : await sendOtpEmail(normalizedEmail, otp);
 
     if (!result.success) {
-      console.warn("⚠️ Email dispatch failed. Falling back to sandbox bypass. Error:", result.error);
+      console.warn("⚠️ Email dispatch failed. Error:", result.error);
       return NextResponse.json({
         success: true,
-        message: "A 6-digit verification code has been generated in developer bypass mode.",
-        mock: true, 
-        mockOtp: otp,
+        message: "A 6-digit verification code has been generated. Please check server execution logs.",
       });
     }
 
@@ -87,7 +85,7 @@ export async function POST(request: Request) {
       success: true,
       message: "A 6-digit verification code has been sent to your email.",
       mock: result.mock, // Let the client know if we are in local mock development
-      mockOtp: result.mock ? otp : undefined,
+      mockOtp: (result.mock && process.env.NODE_ENV !== "production") ? otp : undefined,
     });
   } catch (error: any) {
     console.error("Error in OTP send route:", error);

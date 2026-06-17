@@ -2,13 +2,23 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, transactions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const { postId, authorId, tipperId } = await request.json();
 
     if (!postId || !authorId || !tipperId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== tipperId) {
+      return NextResponse.json({ error: "Forbidden. You cannot execute transactions for other users." }, { status: 403 });
     }
 
     if (tipperId === authorId) {

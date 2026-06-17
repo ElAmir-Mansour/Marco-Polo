@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v0 } from "v0-sdk";
 import { env } from "@/lib/env";
+import { getSession } from "@/lib/session";
 
 export const maxDuration = 300; // Allow up to 5 minutes for long-running v0 generations
 
@@ -25,6 +26,11 @@ Guidelines:
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { prompt, nodeTitle } = body;
 
@@ -113,6 +119,11 @@ export default function OasisBoilerplate() {
 
 export async function GET(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get("chatId");
 

@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { generateText } from "ai";
 import { env } from "@/lib/env";
 import { getGoogleClient } from "@/lib/services/ai-client";
+import { getSession } from "@/lib/session";
 
 export const maxDuration = 60; // Allow up to 60 seconds for Gemini personalized roadmap generation
 
@@ -45,6 +46,11 @@ Format your response as a single, raw JSON object. Return ONLY the raw JSON stri
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { email, message, restart } = body;
 
@@ -53,6 +59,10 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    if (sessionData.email !== normalizedEmail) {
+      return NextResponse.json({ error: "Forbidden. You cannot execute onboarding for other users." }, { status: 403 });
+    }
 
     // 1. Find or create user
     let userRecord = await db.query.users.findFirst({

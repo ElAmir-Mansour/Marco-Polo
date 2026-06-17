@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { forumPosts, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 
 // Basic keyword NLP frustration detector
 function analyzeSentiment(text: string): "positive" | "neutral" | "frustrated" {
@@ -28,11 +29,20 @@ function analyzeSentiment(text: string): "positive" | "neutral" | "frustrated" {
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId, email, content } = body;
 
     if (!userId || !email || !content) {
       return NextResponse.json({ error: "Missing required fields: userId, email, content" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden. You cannot post content for other users." }, { status: 403 });
     }
 
     const sentiment = analyzeSentiment(content);

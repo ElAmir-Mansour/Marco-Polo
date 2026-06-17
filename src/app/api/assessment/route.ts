@@ -3,14 +3,24 @@ import { db } from "@/lib/db";
 import { users, assessments } from "@/lib/db/schema";
 import { getProgress, saveProgress } from "@/lib/aws/dynamodb";
 import { eq } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 
 export async function GET(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
     if (!userId) {
       return NextResponse.json({ error: "Missing required parameter: userId" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden. You cannot view assessments for other users." }, { status: 403 });
     }
 
     // Load all completed assessments for the user
@@ -33,11 +43,20 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId, trackId, score, subSkills } = body;
 
     if (!userId || !trackId || score === undefined || !subSkills) {
       return NextResponse.json({ error: "Missing required parameters: userId, trackId, score, subSkills" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden. You cannot update assessments for other users." }, { status: 403 });
     }
 
     // Calculate percentile relative to standard 300 scale

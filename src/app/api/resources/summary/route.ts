@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateText } from "ai";
 import { env } from "@/lib/env";
 import { getGoogleClient } from "@/lib/services/ai-client";
+import { getSession } from "@/lib/session";
 
 const SUMMARY_PROMPT = (title: string, url: string, type: string) => `
 You are Master Marco Polo (the AI Caravan Master). Provide a 30-second bulleted summary of this learning resource:
@@ -19,6 +20,11 @@ Keep it extremely concise (max 3 lines) and use the desert Caravan traveler tone
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { title, url, type } = body;
 

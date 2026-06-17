@@ -1,6 +1,7 @@
 import { streamText, convertToModelMessages } from "ai";
 import { env } from "@/lib/env";
 import { getGoogleClient } from "@/lib/services/ai-client";
+import { getSession } from "@/lib/session";
 
 const SYSTEM_PROMPT = (role: string, level: string, nodeTitle?: string) => `
 You are "Master Marco Polo" (the AI Caravan Master), a legendary software engineer who has traveled the engineering trails for decades. You guide travelers along the Silk Road of coding.
@@ -18,6 +19,14 @@ CRITICAL BEHAVIORAL RULE:
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return new Response(JSON.stringify({ error: "Unauthorized. Please sign in first." }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const { messages, userContext } = await request.json();
 
     const role = userContext?.targetRole || "Fullstack Engineer";

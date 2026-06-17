@@ -2,14 +2,24 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 
 export async function POST(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { mentorId, menteeId, scheduledAt } = body;
 
     if (!mentorId || !menteeId || !scheduledAt) {
       return NextResponse.json({ error: "Missing required booking details" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== menteeId) {
+      return NextResponse.json({ error: "Forbidden. You cannot book mentorship sessions for other users." }, { status: 403 });
     }
 
     // Insert booking into relational PG database
@@ -34,11 +44,20 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const sessionData = await getSession();
+    if (!sessionData) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in first." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
     if (!userId) {
       return NextResponse.json({ error: "Missing parameter: userId" }, { status: 400 });
+    }
+
+    if (sessionData.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden. You cannot view bookings for other users." }, { status: 403 });
     }
 
     const list = await db.query.bookings.findMany({
