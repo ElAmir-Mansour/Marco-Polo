@@ -778,6 +778,100 @@ export default function ExpeditionDashboard() {
     return () => cancelAnimationFrame(animFrameId);
   }, [activeIndex, nodeCoordinates]);
 
+  const [useV0Trial, setUseV0Trial] = useState(false);
+  const [v0TrialUsed, setV0TrialUsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setV0TrialUsed(localStorage.getItem("silkroad_v0_trial_used") === "true");
+    }
+  }, []);
+
+  const hasNextOasis = useMemo(() => {
+    if (!progress || !progress.nodes || !selectedNode) return false;
+    const currentIndex = progress.nodes.findIndex((n: any) => n.id === selectedNode.id);
+    return currentIndex !== -1 && currentIndex < progress.nodes.length - 1;
+  }, [progress, selectedNode]);
+
+  const handleNextOasis = () => {
+    setVictoryModalOpen(false);
+    if (!progress || !progress.nodes || progress.nodes.length === 0) return;
+    
+    // Find the next node in progress
+    const activeNodeId = progress.currentActiveNode;
+    const nextNode = progress.nodes.find((n: Node) => n.id === activeNodeId);
+    
+    if (nextNode) {
+      handleNodeClick(nextNode);
+      
+      // Scroll to the sandbox/editor smoothly
+      setTimeout(() => {
+        const sandboxEl = document.getElementById("tour-sandbox");
+        if (sandboxEl) {
+          sandboxEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
+  };
+
+  const handleTipPost = async (postId: string, authorId: string, authorEmail: string) => {
+    if (!userId) return;
+    
+    if (userId === authorId) {
+      setConsoleLogs(prev => [...prev, "🐫 You cannot tip your own scroll, traveler!"]);
+      return;
+    }
+
+    if (userProfile && userProfile.coinsBalance < 10) {
+      setConsoleLogs(prev => [...prev, "❌ Insufficient coins. A tip costs 10 Caravan Coins."]);
+      audio.playThud();
+      return;
+    }
+
+    try {
+      setConsoleLogs(prev => [...prev, `Sending 10 Caravan Coins to ${authorEmail}...`]);
+      audio.playClick();
+      
+      const response = await fetch("/api/community/posts/tip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          authorId,
+          tipperId: userId,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to complete tip.");
+      }
+
+      // Play chime sound & trigger small confetti burst
+      audio.playChime();
+      confetti({
+        particleCount: 15,
+        spread: 30,
+        origin: { y: 0.8 },
+        colors: ["#D4AF37", "#00A896"],
+      });
+
+      // Update local profile balance
+      if (userProfile) {
+        setUserProfile({
+          ...userProfile,
+          coinsBalance: data.newBalance,
+        });
+      }
+
+      setConsoleLogs(prev => [...prev, `✅ Tipped 10 Caravan Coins to ${authorEmail} successfully!`]);
+    } catch (err: any) {
+      console.error("Failed to tip post:", err);
+      setConsoleLogs(prev => [...prev, `❌ Tipping failed: ${err.message}`]);
+      audio.playThud();
+    }
+  };
+
   const handleV0Generate = async () => {
     if (!v0Prompt.trim() || !selectedNode) return;
     setGeneratingCode(true);
@@ -795,6 +889,11 @@ export default function ExpeditionDashboard() {
       const data = await response.json();
       if (response.ok && data.success) {
         setV0Response(data);
+        if (useV0Trial) {
+          localStorage.setItem("silkroad_v0_trial_used", "true");
+          setV0TrialUsed(true);
+          setUseV0Trial(false);
+        }
       } else {
         setV0Error(data.error || "Failed to generate component.");
       }
@@ -1996,7 +2095,20 @@ export default function ExpeditionDashboard() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between text-[8px] text-text-secondary mb-1">
                             <span className="font-bold text-gold-sand truncate max-w-[120px]">{post.authorEmail}</span>
-                            <span className="text-[7px] text-text-secondary/70 flex-shrink-0">{new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[7px] text-text-secondary/70 flex-shrink-0">{new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              {post.userId !== userId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleTipPost(post.id, post.userId, post.authorEmail)}
+                                  title="Tip 10 Caravan Coins"
+                                  className="text-gold-sand hover:text-midnight bg-gold-sand/10 hover:bg-gold-sand border border-gold-sand/30 rounded-lg px-1.5 py-0.5 font-sans font-bold flex items-center space-x-0.5 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                >
+                                  <span>Tip 10</span>
+                                  <Coins className="h-2.5 w-2.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <p className="text-text-primary leading-relaxed break-words font-sans">{post.content}</p>
                           {post.sentiment === "frustrated" && (
@@ -2411,29 +2523,7 @@ export default function ExpeditionDashboard() {
                 </button>
               </div>
 
-              {(!userProfile || userProfile.subscriptionStatus !== "active") ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center space-y-4 animate-fadeIn">
-                  <div className="h-14 w-14 rounded-full bg-gold-sand/15 border border-gold-sand/40 flex items-center justify-center text-gold-sand shadow-[0_0_15px_rgba(212,175,55,0.15)]">
-                    <Lock className="h-6 w-6" />
-                  </div>
-                  <div className="space-y-1.5 max-w-md">
-                    <h4 className="text-base font-bold font-serif text-gold-sand uppercase tracking-wider text-center">Nomad Upgrade Required</h4>
-                    <p className="text-xs text-text-secondary leading-relaxed text-center">
-                      Chart the Oasis with v0 component generation! This premium feature leverages the Vercel v0 Platform API to construct bespoke React and Tailwind CSS templates. Upgrade your caravan status to Nomad in the Great Bazaar to unlock it.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setV0ModalOpen(false);
-                      router.push("/marketplace");
-                    }}
-                    className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-6 py-2.5 rounded-xl transition-all shadow-md flex items-center space-x-1 cursor-pointer animate-pulse"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    <span>Go to Great Bazaar</span>
-                  </button>
-                </div>
-              ) : (
+              {(userProfile?.subscriptionStatus === "active" || useV0Trial) ? (
                 <>
                   <p className="text-xs text-text-secondary leading-relaxed">
                     Describe a UI component matching this milestone (<span className="text-gold-sand">{selectedNode?.title}</span>). v0 will generate self-contained React & Tailwind CSS code aligned with Silk Road styling.
@@ -2456,7 +2546,10 @@ export default function ExpeditionDashboard() {
                       />
                       <div className="flex justify-end space-x-2">
                         <button
-                          onClick={() => setV0ModalOpen(false)}
+                          onClick={() => {
+                            setV0ModalOpen(false);
+                            setUseV0Trial(false);
+                          }}
                           className="px-4 py-2 border border-text-secondary/20 rounded-lg text-text-secondary text-[10px] font-semibold hover:border-text-secondary/40 transition-colors cursor-pointer"
                         >
                           Cancel
@@ -2546,20 +2639,73 @@ export default function ExpeditionDashboard() {
                           >
                             Load Into Sandbox
                           </button>
-                      <a
-                        href={v0Response.webUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-[10px] font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center cursor-pointer"
-                      >
-                        Open Live on v0.app
-                      </a>
+                          <a
+                            href={v0Response.webUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-[10px] font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center cursor-pointer"
+                          >
+                            Open Live on v0.app
+                          </a>
+                        </div>
+                      </div>
                     </div>
+                  )}
+                </>
+              ) : !v0TrialUsed ? (
+                /* Free Trial Activation Screen */
+                <div className="flex flex-col items-center justify-center py-6 text-center space-y-4 animate-fadeIn">
+                  <div className="h-14 w-14 rounded-full bg-teal-spring/10 border border-teal-spring/30 flex items-center justify-center text-teal-spring shadow-[0_0_15px_rgba(0,168,150,0.15)] animate-pulse">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <div className="space-y-1.5 max-w-md">
+                    <h4 className="text-base font-bold font-serif text-teal-spring uppercase tracking-wider text-center">Unleash the v0 Trial!</h4>
+                    <p className="text-xs text-text-secondary leading-relaxed text-center">
+                      You have <strong className="text-teal-spring font-bold">1 Free Trial Component</strong> remaining! Leverage the Vercel v0 Platform API to construct a custom React + Tailwind CSS boilerplate for your current milestone: <span className="text-gold-sand font-semibold">{selectedNode?.title}</span>.
+                    </p>
+                  </div>
+                  <div className="flex space-x-3 w-full max-w-sm pt-2">
+                    <button
+                      onClick={() => {
+                        setV0ModalOpen(false);
+                        router.push("/marketplace");
+                      }}
+                      className="flex-1 border border-gold-sand/30 hover:bg-gold-sand/10 text-gold-sand text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer text-center uppercase tracking-wider"
+                    >
+                      Upgrade to Nomad
+                    </button>
+                    <button
+                      onClick={() => setUseV0Trial(true)}
+                      className="flex-1 bg-teal-spring hover:bg-teal-spring/90 text-midnight text-[10px] font-bold py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer uppercase tracking-wider"
+                    >
+                      <span>Activate Free Trial</span>
+                    </button>
                   </div>
                 </div>
+              ) : (
+                /* Nomad Locked Screen */
+                <div className="flex flex-col items-center justify-center py-8 text-center space-y-4 animate-fadeIn">
+                  <div className="h-14 w-14 rounded-full bg-gold-sand/15 border border-gold-sand/40 flex items-center justify-center text-gold-sand shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+                    <Lock className="h-6 w-6" />
+                  </div>
+                  <div className="space-y-1.5 max-w-md">
+                    <h4 className="text-base font-bold font-serif text-gold-sand uppercase tracking-wider text-center">Nomad Upgrade Required</h4>
+                    <p className="text-xs text-text-secondary leading-relaxed text-center">
+                      Chart the Oasis with v0 component generation! This premium feature leverages the Vercel v0 Platform API to construct bespoke React and Tailwind CSS templates. Upgrade your caravan status to Nomad in the Great Bazaar to unlock it.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setV0ModalOpen(false);
+                      router.push("/marketplace");
+                    }}
+                    className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-6 py-2.5 rounded-xl transition-all shadow-md flex items-center space-x-1 cursor-pointer animate-pulse"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Go to Great Bazaar</span>
+                  </button>
+                </div>
               )}
-            </>
-          )}
         </div>
       </div>
     )}
@@ -2613,23 +2759,35 @@ export default function ExpeditionDashboard() {
                 )}
               </div>
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setVictoryModalOpen(false)}
-                  className="flex-1 border border-text-secondary/20 hover:border-text-secondary/40 text-text-primary text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    setVictoryModalOpen(false);
-                    setV0ModalOpen(true);
-                  }}
-                  className="flex-1 bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer animate-pulse"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span>Generate UI with v0</span>
-                </button>
+              <div className="flex flex-col space-y-2.5 w-full">
+                {hasNextOasis && (
+                  <button
+                    onClick={handleNextOasis}
+                    className="w-full bg-teal-spring hover:bg-teal-spring/90 text-midnight text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer font-serif transform hover:-translate-y-0.5"
+                  >
+                    <span>Advance to Next Oasis</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                )}
+
+                <div className="flex space-x-3 w-full">
+                  <button
+                    onClick={() => setVictoryModalOpen(false)}
+                    className="flex-1 border border-text-secondary/20 hover:border-text-secondary/40 text-text-primary text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setVictoryModalOpen(false);
+                      setV0ModalOpen(true);
+                    }}
+                    className="flex-1 bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer animate-pulse"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Generate UI with v0</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
