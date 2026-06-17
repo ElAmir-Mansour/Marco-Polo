@@ -8,6 +8,9 @@ import { generateText } from "ai";
 import { env } from "@/lib/env";
 import { getGoogleClient } from "@/lib/services/ai-client";
 
+export const maxDuration = 60; // Allow up to 60 seconds for Gemini personalized roadmap generation
+
+
 // Assesses the conversation using Gemini
 const ONBOARDING_ASSESSMENT_PROMPT = (chatHistory: string) => `
 You are Master Marco Polo (the AI Caravan Master). The user is in an onboarding conversation to determine their learning path.

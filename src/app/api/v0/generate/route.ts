@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { v0 } from "v0-sdk";
 import { env } from "@/lib/env";
 
+export const maxDuration = 300; // Allow up to 5 minutes for long-running v0 generations
+
 const SYSTEM_PROMPT = `
 You are an expert React and Tailwind CSS developer who creates state-of-the-art UI components.
 You MUST write clean, modern, and beautifully styled TypeScript components.
@@ -69,23 +71,35 @@ export default function OasisBoilerplate() {
 
     console.log(`Sending prompt to v0 API for node: ${nodeTitle || "General"}...`);
     
-    // Create chat generation using the v0-sdk client methods
+    // Create chat generation using the v0-sdk client methods asynchronously
     const chat: any = await v0.chats.create({
       message: `Create a component: ${prompt}${nodeTitle ? ` suitable for the milestone node "${nodeTitle}"` : ""}.`,
       system: SYSTEM_PROMPT,
+      responseMode: "async",
     });
 
-    console.log(`v0 Chat created successfully. ID: ${chat.id}`);
+    console.log(`v0 Chat created successfully (async). ID: ${chat.id}`);
 
-    // If latestVersion exists, retrieve files
-    const latestFiles = chat.latestVersion?.files || {};
+    // Map files array to a dictionary of file names to content
+    const latestFilesRaw = chat.latestVersion?.files || [];
+    const files: Record<string, { content: string }> = {};
+    if (Array.isArray(latestFilesRaw)) {
+      for (const file of latestFilesRaw) {
+        if (file && file.name) {
+          files[file.name] = { content: file.content };
+        }
+      }
+    } else {
+      Object.assign(files, latestFilesRaw);
+    }
     
     return NextResponse.json({
       success: true,
+      status: chat.latestVersion?.status || "pending",
       chatId: chat.id,
       webUrl: chat.webUrl,
-      description: chat.text || chat.latestVersion?.description || "Component generated successfully.",
-      files: latestFiles,
+      description: chat.text || chat.latestVersion?.description || "Component generation initialized.",
+      files,
     });
   } catch (error: any) {
     console.error("Vercel v0 API generation error:", error);
@@ -95,3 +109,74 @@ export default function OasisBoilerplate() {
     );
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const chatId = searchParams.get("chatId");
+
+    if (!chatId) {
+      return NextResponse.json(
+        { error: "chatId query parameter is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!env.V0_API_KEY) {
+      // Offline fallback status handler
+      return NextResponse.json({
+        success: true,
+        status: "completed",
+        chatId,
+        webUrl: "https://v0.dev/chat/mock",
+        description: "Generated placeholder (Offline fallback mode).",
+        files: {
+          "components/oasis-boilerplate.tsx": {
+            content: `import React from 'react';
+import { Compass } from 'lucide-react';
+
+export default function OasisBoilerplate() {
+  return (
+    <div className="bg-[#0D1B2A]/80 backdrop-blur-md border border-[#D4AF37]/20 p-6 rounded-2xl max-w-sm mx-auto text-center">
+      <Compass className="h-10 w-10 text-[#D4AF37] mx-auto mb-4" />
+      <h3 className="text-[#F4F6F8] font-bold text-base">Oasis UI Boilerplate (Fallback)</h3>
+    </div>
+  );
+}`,
+          },
+        },
+      });
+    }
+
+    console.log(`Polling v0 status for chatId: ${chatId}...`);
+    const chat: any = await v0.chats.getById({ chatId });
+
+    const latestFilesRaw = chat.latestVersion?.files || [];
+    const files: Record<string, { content: string }> = {};
+    if (Array.isArray(latestFilesRaw)) {
+      for (const file of latestFilesRaw) {
+        if (file && file.name) {
+          files[file.name] = { content: file.content };
+        }
+      }
+    } else {
+      Object.assign(files, latestFilesRaw);
+    }
+
+    return NextResponse.json({
+      success: true,
+      status: chat.latestVersion?.status || "pending",
+      chatId: chat.id,
+      webUrl: chat.webUrl,
+      description: chat.text || chat.latestVersion?.description || "Generating component...",
+      files,
+    });
+  } catch (error: any) {
+    console.error("Vercel v0 API status polling error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch status from v0 API." },
+      { status: 500 }
+    );
+  }
+}
+

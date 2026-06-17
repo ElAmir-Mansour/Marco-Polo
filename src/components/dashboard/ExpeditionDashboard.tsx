@@ -441,6 +441,8 @@ export default function ExpeditionDashboard() {
     return () => clearTimeout(timer);
   }, [codeSolution, selectedNode]);
 
+  const nodeSpacingY = 135;
+
   // Phase 3 B2C Daily Companion States
   const [failCount, setFailCount] = useState(0);
   const [userFrustrated, setUserFrustrated] = useState(false);
@@ -456,21 +458,37 @@ export default function ExpeditionDashboard() {
   const [v0Prompt, setV0Prompt] = useState("");
   const [v0Error, setV0Error] = useState("");
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [v0Status, setV0Status] = useState<"idle" | "pending" | "completed" | "failed">("idle");
   const [v0Response, setV0Response] = useState<{
     chatId: string;
     webUrl: string;
     description: string;
     files: Record<string, { content: string }>;
   } | null>(null);
+  const v0PollIntervalRef = useRef<any>(null);
 
-  // Math coordinates for oases bezier curve mapping
-  const nodeSpacingY = 135;
+  // Cleanup polling interval when modal closes or component unmounts
+  useEffect(() => {
+    if (!v0ModalOpen) {
+      if (v0PollIntervalRef.current) {
+        clearInterval(v0PollIntervalRef.current);
+        v0PollIntervalRef.current = null;
+      }
+      setGeneratingCode(false);
+      setV0Status("idle");
+    }
+    return () => {
+      if (v0PollIntervalRef.current) {
+        clearInterval(v0PollIntervalRef.current);
+      }
+    };
+  }, [v0ModalOpen]);
+
   const mapHeight = useMemo(() => {
     if (!progress || !progress.nodes) return 0;
     return progress.nodes.length * nodeSpacingY + 80;
   }, [progress]);
 
-  // Drag to scroll states & refs
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -875,8 +893,16 @@ export default function ExpeditionDashboard() {
   const handleV0Generate = async () => {
     if (!v0Prompt.trim() || !selectedNode) return;
     setGeneratingCode(true);
+    setV0Status("pending");
     setV0Error("");
     setV0Response(null);
+
+    // Clear any active poll intervals just in case
+    if (v0PollIntervalRef.current) {
+      clearInterval(v0PollIntervalRef.current);
+      v0PollIntervalRef.current = null;
+    }
+
     try {
       const response = await fetch("/api/v0/generate", {
         method: "POST",
@@ -894,17 +920,71 @@ export default function ExpeditionDashboard() {
           setV0TrialUsed(true);
           setUseV0Trial(false);
         }
+
+        // If backend fallback mode immediately returns completed, stop here
+        if (data.status === "completed") {
+          setV0Status("completed");
+          setGeneratingCode(false);
+          return;
+        }
+
+        const activeChatId = data.chatId;
+
+        // Start polling loop every 4 seconds
+        const interval = setInterval(async () => {
+          try {
+            const pollResponse = await fetch(`/api/v0/generate?chatId=${activeChatId}`);
+            if (!pollResponse.ok) {
+              throw new Error("Failed to contact polling gateway.");
+            }
+            const pollData = await pollResponse.json();
+            if (pollData.success) {
+              setV0Response(prev => {
+                if (!prev) return pollData;
+                return {
+                  ...prev,
+                  description: pollData.description || prev.description,
+                  files: pollData.files || prev.files,
+                };
+              });
+
+              if (pollData.status === "completed") {
+                setV0Status("completed");
+                setGeneratingCode(false);
+                clearInterval(interval);
+                v0PollIntervalRef.current = null;
+              } else if (pollData.status === "failed") {
+                setV0Status("failed");
+                setV0Error("Component generation failed on v0.app.");
+                setGeneratingCode(false);
+                clearInterval(interval);
+                v0PollIntervalRef.current = null;
+              }
+            } else {
+              setV0Status("failed");
+              setV0Error(pollData.error || "Failed checking generation status.");
+              setGeneratingCode(false);
+              clearInterval(interval);
+              v0PollIntervalRef.current = null;
+            }
+          } catch (pollErr: any) {
+            console.error("v0 status poll failure:", pollErr);
+          }
+        }, 4000);
+
+        v0PollIntervalRef.current = interval;
       } else {
-        setV0Error(data.error || "Failed to generate component.");
+        setV0Status("failed");
+        setV0Error(data.error || "Failed to initialize component generation.");
+        setGeneratingCode(false);
       }
     } catch (err) {
+      setV0Status("failed");
       setV0Error("Network error: failed to contact v0 generation gateway.");
-    } finally {
       setGeneratingCode(false);
     }
   };
 
-  // Interactive Tour Walkthrough State
   const [tourStep, setTourStep] = useState<number | null>(null);
   const [highlightRect, setHighlightRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({
@@ -2572,15 +2652,27 @@ export default function ExpeditionDashboard() {
                         <Compass className="h-10 w-10 text-gold-sand animate-spin" />
                         <div className="absolute animate-ping h-14 w-14 rounded-full bg-gold-sand/10"></div>
                       </div>
-                      <div className="text-center space-y-1">
+                      <div className="text-center space-y-2 flex flex-col items-center">
                         <p className="text-xs text-text-primary font-bold">Crafting component on v0.app...</p>
                         <p className="text-[10px] text-text-secondary">Whispering to the sand dunes to align neon CSS vectors...</p>
+                        {v0Response?.webUrl && (
+                          <div className="pt-2 animate-fadeIn">
+                            <a
+                              href={v0Response.webUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-1.5 text-[10px] font-bold text-gold-sand border border-gold-sand/30 bg-[#0D1B2A] hover:bg-[#D4AF37]/10 px-3 py-1.5 rounded-xl transition-all shadow-lg cursor-pointer"
+                            >
+                              <span>Watch live generation on v0.app ↗</span>
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Response Panel */}
-                  {v0Response && (
+                  {v0Status === "completed" && v0Response && (
                     <div className="space-y-4">
                       <div className="bg-midnight/70 rounded-xl p-4 border border-gold-sand/15 space-y-2">
                         <h4 className="text-[10px] font-bold text-gold-sand uppercase tracking-wider">v0 Blueprint</h4>
