@@ -261,3 +261,35 @@ We implemented a full-scale user interface and experience overhaul to elevate th
   - Compile Failure: Heavy wooden thud generated via pitch-decay sweep and lowpass noise burst.
   - Chat Dialogue Rustle: Paper rustle sweep via bandpass-filtered noise bursts.
 - Added an interactive speaker mute toggle in the main dashboard header, syncing mute preferences to `localStorage`.
+
+---
+
+## 🐫 Phase 7 Advanced User Flow & Asynchronous UI Generator
+
+We introduced high-conversion B2C gamification features, relational community tipping transactions, and non-blocking asynchronous code generation:
+
+### 1. Next Oasis Navigation Flow
+- Integrated a full-width **"Advance to Next Oasis 🐫"** action button in the puzzle Victory modal.
+- Clicking the button automatically selects the next unlocked node in the roadmap, triggers the caravan camel's bezier walk animation, updates the code sandbox with the next puzzle's boilerplate, resets validation logs, and scrolls the page viewport smoothly to focus on the coding sandbox.
+
+### 2. Caravanserai Community Tipping (AWS Aurora Relational Transactions)
+- Implemented a peer-to-peer coin tipping feature directly next to Caravanserai community forum scrolls.
+- Deducts 10 Caravan Coins from the tipper's profile and credits 10 coins to the post author.
+- **Relational ACID Transaction**: The `/api/community/posts/tip` API endpoint executes a database transaction using Drizzle ORM to deduct/credit balances and insert a ledger entry in the `transactions` table. Self-tipping and tipping with insufficient coin purses are blocked at the database boundary.
+- Triggers a metallic coin chime sound and a canvas confetti burst on the UI upon successful transaction.
+
+### 3. Vercel v0 Playground Free Trial (Conversion Optimization)
+- Created a B2C conversion funnel by offering free-tier travelers a **1-Time Free Trial Component Generation** in the v0 Component Generator Modal.
+- The trial status is persisted in the browser's `localStorage` (`silkroad_v0_trial_used`). Subsequent component generation requests are blocked and direct the traveler to the Great Bazaar subscription upgrade card.
+
+### 4. Non-Blocking Asynchronous v0 Generation & Status Polling
+- Shifted heavy Vercel v0.app code generations (taking up to 2 minutes) to an asynchronous, non-blocking flow to prevent Vercel Serverless Function 10s/15s timeout limits and 504 Gateway errors.
+- **Async Creation**: `/api/v0/generate` POST requests launch v0 generation with `responseMode: "async"` and `chatPrivacy: "unlisted"`, returning the chat credentials (`chatId` and `webUrl`) in ~1 second.
+- **Watch Live Link**: Displays a **"Watch live generation on v0.app ↗"** action button in the loading modal, allowing users to watch the AI build, compile, and preview the React + Tailwind components live on v0.app without authentication blocks.
+- **Dynamic Polling**: Client triggers a status check via `GET /api/v0/generate?chatId=xxx` every 4 seconds, updating description and loading the generated source code into the editor sandbox once the status transitions from `pending` to `completed`.
+- **Payload Dictionary**: Transforming v0 SDK's array of file responses into a path-indexed dictionary (e.g. `{[file.name]: { content: file.content }}`) so that file paths display correctly in the UI instead of array index numbers (`"0"`, `"1"`).
+
+### 5. Height-Constrained Sandbox Code Editor
+- Constrained the height of the Sandbox Editor container in [ExpeditionDashboard.tsx](file:///Users/elamir/Desktop/Marco_Polo/src/components/dashboard/ExpeditionDashboard.tsx) to a fixed `h-[480px]`.
+- This prevents large generative components (often exceeding 1,000 lines) from stretching the browser viewport.
+- Setting a constrained height successfully activates the vertical scrollbar of the `textarea` and enables the double-column synced line numbers gutter animation.
