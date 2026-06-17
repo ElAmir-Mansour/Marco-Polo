@@ -76,6 +76,7 @@ export default function OasisBoilerplate() {
       message: `Create a component: ${prompt}${nodeTitle ? ` suitable for the milestone node "${nodeTitle}"` : ""}.`,
       system: SYSTEM_PROMPT,
       responseMode: "async",
+      chatPrivacy: "unlisted",
     });
 
     console.log(`v0 Chat created successfully (async). ID: ${chat.id}`);
