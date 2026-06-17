@@ -719,9 +719,11 @@ export default function AssessmentCenter() {
             <div className="w-full flex justify-between items-center pt-2">
               <button
                 onClick={() => {
-                  if (timerRef.current) clearInterval(timerRef.current);
-                  setTestActive(false);
-                  setActiveTrack(null);
+                  if (confirm("🐫 Are you sure you want to abort the expedition? Your active progress will be lost!")) {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    setTestActive(false);
+                    setActiveTrack(null);
+                  }
                 }}
                 className="text-xs text-text-secondary hover:text-text-primary uppercase font-bold flex items-center space-x-1 cursor-pointer"
               >

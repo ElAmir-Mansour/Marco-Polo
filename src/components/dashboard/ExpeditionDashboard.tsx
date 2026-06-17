@@ -174,12 +174,12 @@ function CanteenWidget({ streak, userProfile, userId, onRefreshData }: CanteenWi
       {/* Main Pill Widget */}
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center space-x-2 px-2.5 h-[30px] rounded-xl border transition-all cursor-pointer select-none bg-indigo-oasis/40 ${
+        className={`flex items-center justify-center space-x-2 px-3 h-[34px] rounded-xl border transition-all cursor-pointer select-none bg-indigo-oasis/40 whitespace-nowrap ${
           isGoldStreak
             ? "border-gold-sand/40 text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.25)] hover:border-gold-sand/80"
             : streakCount === 0
-            ? "border-orange-flame/30 text-orange-flame/80 hover:border-orange-flame/60"
-            : "border-teal-spring/30 text-teal-spring hover:border-teal-spring/60"
+            ? "border-gold-sand/20 text-text-secondary hover:text-orange-flame hover:border-orange-flame/40"
+            : "border-gold-sand/20 text-text-secondary hover:text-teal-spring hover:border-teal-spring/40"
         }`}
       >
         <div className="relative h-6 w-5 flex items-center justify-center flex-shrink-0">
@@ -389,7 +389,9 @@ export default function ExpeditionDashboard() {
   // Status state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [validationStatus, setValidationStatus] = useState<"idle" | "success" | "failure">("idle");
+  const [validationStatus, setValidationStatus] = useState<"idle" | "verifying" | "success" | "failure">("idle");
+  const [tippingPostId, setTippingPostId] = useState<string | null>(null);
+  const [copiedFile, setCopiedFile] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(true);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
   const [victoryModalOpen, setVictoryModalOpen] = useState(false);
@@ -846,6 +848,7 @@ export default function ExpeditionDashboard() {
       return;
     }
 
+    setTippingPostId(postId);
     try {
       setConsoleLogs(prev => [...prev, `Sending 10 Caravan Coins to ${authorEmail}...`]);
       audio.playClick();
@@ -887,6 +890,8 @@ export default function ExpeditionDashboard() {
       console.error("Failed to tip post:", err);
       setConsoleLogs(prev => [...prev, `❌ Tipping failed: ${err.message}`]);
       audio.playThud();
+    } finally {
+      setTippingPostId(null);
     }
   };
 
@@ -1417,7 +1422,7 @@ export default function ExpeditionDashboard() {
   // Code challenge validator (AST parser + Web Worker Sandbox)
   const handleVerifySolution = async () => {
     if (!selectedNode || !userId || !progress) return;
-    setValidationStatus("idle");
+    setValidationStatus("verifying");
     setConsoleLogs(["Initializing compilation sandbox...", "Loading AST syntax parser..."]);
 
     // 1. AST Syntax Parsing
@@ -1634,7 +1639,7 @@ export default function ExpeditionDashboard() {
         </div>
 
         {/* Action controls */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0">
           
           {/* Sound Synthesizer Toggle */}
           <button
@@ -1643,16 +1648,16 @@ export default function ExpeditionDashboard() {
               setSoundMuted(muted);
             }}
             title={soundMuted ? "Unmute Ambient Soundscapes" : "Mute Ambient Soundscapes"}
-            className={`flex items-center justify-center w-[30px] h-[30px] rounded-xl border transition-all cursor-pointer ${
+            className={`flex items-center justify-center w-[34px] h-[34px] rounded-xl border transition-all cursor-pointer ${
               soundMuted
-                ? "border-gold-sand/20 text-text-secondary/70 hover:border-gold-sand/40 hover:text-gold-sand hover:bg-gold-sand/5"
-                : "bg-gold-sand/15 border-gold-sand text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.15)]"
+                ? "border-gold-sand/20 text-text-secondary hover:border-gold-sand/40 hover:text-gold-sand hover:bg-gold-sand/5"
+                : "bg-gold-sand/15 border-gold-sand/30 text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.15)] hover:border-gold-sand/50"
             }`}
           >
             {soundMuted ? (
-              <VolumeX className="h-4 w-4" />
+              <VolumeX className="h-4 w-4 flex-shrink-0" />
             ) : (
-              <div className="relative flex items-center justify-center">
+              <div className="relative flex items-center justify-center flex-shrink-0">
                 <Volume2 className="h-4 w-4" />
                 <span className="absolute -right-1 -top-1 flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-sand opacity-75"></span>
@@ -1664,7 +1669,7 @@ export default function ExpeditionDashboard() {
 
           {/* Survival streak widget with hydration wave animation */}
           {streak && (
-            <div id="tour-streak" className="inline-flex">
+            <div id="tour-streak" className="inline-flex items-center h-[34px] flex-shrink-0">
               <CanteenWidget
                 streak={streak}
                 userProfile={userProfile}
@@ -1684,10 +1689,10 @@ export default function ExpeditionDashboard() {
               audio.playClick();
               router.push("/assessment");
             }}
-            className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-teal-spring/30 text-teal-spring hover:bg-teal-spring/10 transition-all cursor-pointer"
+            className="flex items-center justify-center space-x-1.5 px-3 h-[34px] rounded-xl text-xs font-semibold border border-gold-sand/20 text-text-secondary hover:text-teal-spring hover:border-teal-spring/40 hover:bg-teal-spring/5 transition-all cursor-pointer whitespace-nowrap"
           >
-            <Brain className="h-4 w-4" />
-            <span>Skill IQ</span>
+            <Brain className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Skill IQ</span>
           </button>
 
           {/* Marketplace Button */}
@@ -1696,10 +1701,10 @@ export default function ExpeditionDashboard() {
               audio.playClick();
               router.push("/marketplace");
             }}
-            className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-gold-sand/30 text-gold-sand hover:bg-gold-sand/10 transition-all cursor-pointer"
+            className="flex items-center justify-center space-x-1.5 px-3 h-[34px] rounded-xl text-xs font-bold bg-gold-sand text-midnight hover:bg-gold-sand/90 border border-gold-sand transition-all cursor-pointer whitespace-nowrap shadow-[0_0_12px_rgba(212,175,55,0.25)]"
           >
-            <Sparkles className="h-4 w-4" />
-            <span>Bazaar</span>
+            <Sparkles className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Bazaar</span>
           </button>
 
           {/* Leave Caravan Logout Button */}
@@ -1715,9 +1720,9 @@ export default function ExpeditionDashboard() {
               router.push("/onboarding");
             }}
             title="Leave Caravan"
-            className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-orange-flame/30 text-orange-flame hover:bg-orange-flame/10 transition-all cursor-pointer"
+            className="flex items-center justify-center space-x-1.5 px-3 h-[34px] rounded-xl text-xs font-semibold border border-gold-sand/20 text-text-secondary hover:text-orange-flame hover:border-orange-flame/40 hover:bg-orange-flame/5 transition-all cursor-pointer whitespace-nowrap"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 flex-shrink-0" />
             <span className="hidden sm:inline">Leave Caravan</span>
           </button>
 
@@ -1729,9 +1734,9 @@ export default function ExpeditionDashboard() {
               setTourStep(1);
             }}
             title="Replay Onboarding Tour"
-            className="flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border border-gold-sand/30 text-gold-sand hover:bg-gold-sand/10 transition-all cursor-pointer"
+            className="flex items-center justify-center space-x-1.5 px-3 h-[34px] rounded-xl text-xs font-semibold border border-gold-sand/20 text-text-secondary hover:text-gold-sand hover:border-gold-sand/40 hover:bg-gold-sand/5 transition-all cursor-pointer whitespace-nowrap"
           >
-            <HelpCircle className="h-4 w-4" />
+            <HelpCircle className="h-4 w-4 flex-shrink-0" />
             <span className="hidden sm:inline">Tour</span>
           </button>
 
@@ -1741,14 +1746,14 @@ export default function ExpeditionDashboard() {
               setChatOpen(!chatOpen);
               audio.playRustle();
             }}
-            className={`flex items-center space-x-1 px-3 h-[30px] py-0 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+            className={`flex items-center justify-center space-x-1.5 px-3 h-[34px] rounded-xl text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${
               chatOpen 
-                ? "bg-gold-sand text-midnight border-gold-sand" 
-                : "border-gold-sand/30 text-gold-sand hover:bg-gold-sand/10"
+                ? "bg-gold-sand/15 text-gold-sand border-gold-sand/30 hover:bg-gold-sand/20" 
+                : "border-gold-sand/20 text-text-secondary hover:text-gold-sand hover:border-gold-sand/40 hover:bg-gold-sand/5"
             }`}
           >
-            <MessageSquare className="h-4 w-4" />
-            <span>AI Guide</span>
+            <MessageSquare className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">AI Guide</span>
           </button>
         </div>
       </header>
@@ -2180,12 +2185,22 @@ export default function ExpeditionDashboard() {
                               {post.userId !== userId && (
                                 <button
                                   type="button"
+                                  disabled={tippingPostId !== null}
                                   onClick={() => handleTipPost(post.id, post.userId, post.authorEmail)}
                                   title="Tip 10 Caravan Coins"
-                                  className="text-gold-sand hover:text-midnight bg-gold-sand/10 hover:bg-gold-sand border border-gold-sand/30 rounded-lg px-1.5 py-0.5 font-sans font-bold flex items-center space-x-0.5 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                  className="text-gold-sand hover:text-midnight disabled:opacity-40 disabled:hover:bg-gold-sand/10 disabled:hover:text-gold-sand bg-gold-sand/10 hover:bg-gold-sand border border-gold-sand/30 rounded-lg px-1.5 py-0.5 font-sans font-bold flex items-center space-x-0.5 cursor-pointer transition-all hover:scale-105 active:scale-95"
                                 >
-                                  <span>Tip 10</span>
-                                  <Coins className="h-2.5 w-2.5" />
+                                  {tippingPostId === post.id ? (
+                                    <>
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin text-gold-sand" />
+                                      <span>Tipping...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>Tip 10</span>
+                                      <Coins className="h-2.5 w-2.5" />
+                                    </>
+                                  )}
                                 </button>
                               )}
                             </div>
@@ -2367,7 +2382,7 @@ export default function ExpeditionDashboard() {
                         value={codeSolution}
                         onChange={(e) => setCodeSolution(e.target.value)}
                         onScroll={(e) => setEditorScrollTop(e.currentTarget.scrollTop)}
-                        className="flex-1 p-4 pl-2 bg-midnight text-xs font-mono text-text-primary focus:outline-none resize-none leading-5 select-text overflow-y-auto"
+                        className="flex-1 p-4 pl-2 bg-midnight text-xs font-mono text-text-primary focus:outline-none resize-none leading-5 select-text overflow-y-auto whitespace-pre overflow-x-auto"
                         style={{ lineHeight: "20px" }}
                         spellCheck="false"
                       />
@@ -2463,11 +2478,21 @@ export default function ExpeditionDashboard() {
                     
                     <button
                       type="button"
+                      disabled={validationStatus === "verifying"}
                       onClick={handleVerifySolution}
-                      className="flex items-center space-x-1.5 bg-gold-sand hover:bg-gold-sand/90 text-midnight font-bold py-2 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-xs cursor-pointer"
+                      className="flex items-center space-x-1.5 bg-gold-sand hover:bg-gold-sand/90 disabled:opacity-40 disabled:cursor-not-allowed text-midnight font-bold py-2 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-xs cursor-pointer"
                     >
-                      <Play className="h-3.5 w-3.5 fill-current" />
-                      <span>Test & Verify</span>
+                      {validationStatus === "verifying" ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Verifying...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-3.5 w-3.5 fill-current" />
+                          <span>Test & Verify</span>
+                        </>
+                      )}
                     </button>
                   </div>
 
@@ -2597,9 +2622,10 @@ export default function ExpeditionDashboard() {
                 </div>
                 <button
                   onClick={() => setV0ModalOpen(false)}
-                  className="text-text-secondary hover:text-text-primary text-xs font-bold cursor-pointer"
+                  className="p-3 -m-3 text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                  title="Close Modal"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
@@ -2689,11 +2715,12 @@ export default function ExpeditionDashboard() {
                                 <button
                                   onClick={() => {
                                     navigator.clipboard.writeText(fileObj.content);
-                                    alert("Component code copied to clipboard!");
+                                    setCopiedFile(path);
+                                    setTimeout(() => setCopiedFile(null), 2000);
                                   }}
-                                  className="text-teal-spring hover:underline cursor-pointer"
+                                  className="text-teal-spring hover:underline cursor-pointer font-bold text-[9px] uppercase tracking-wide"
                                 >
-                                  Copy Code
+                                  {copiedFile === path ? "Copied!" : "Copy Code"}
                                 </button>
                               </div>
                               <pre className="bg-black/90 p-4 rounded-xl border border-text-secondary/15 overflow-auto text-[10px] font-mono text-teal-spring max-h-60 leading-relaxed scrollbar-thin">

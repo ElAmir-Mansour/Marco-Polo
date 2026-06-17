@@ -44,6 +44,14 @@ export default function Marketplace() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "coins">("cash");
 
   const [isPortalLoading, setIsPortalLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "error") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(prev => prev?.message === message ? null : prev);
+    }, 5000);
+  };
 
   // Time slot options
   const timeSlots = [
@@ -113,7 +121,7 @@ export default function Marketplace() {
   // Handle Stripe Checkout redirects for Subscriptions or Coins purchases
   const handleStripeCheckout = async (priceId: string, itemName: string) => {
     if (!userId) {
-      alert("Traveler profile missing. Register through onboarding first.");
+      showToast("Traveler profile missing. Register through onboarding first.", "error");
       return;
     }
     
@@ -150,7 +158,7 @@ export default function Marketplace() {
     } catch (err: any) {
       console.error("Stripe Checkout failure:", err);
       setCheckoutStatus("idle");
-      alert(err.message || "Failed to initialize payment process.");
+      showToast(err.message || "Failed to initialize payment process.", "error");
     }
   };
 
@@ -173,13 +181,13 @@ export default function Marketplace() {
       }
 
       if (data.mock) {
-        alert("Developer Simulation: Subscribed Status toggled / cancelled.");
+        showToast("Developer Simulation: Subscribed Status toggled / cancelled.", "info");
         await fetchUserBillingProfile(userId);
       } else {
         window.location.href = data.url;
       }
     } catch (err: any) {
-      alert(err.message || "Failed to launch billing portal.");
+      showToast(err.message || "Failed to launch billing portal.", "error");
     } finally {
       setIsPortalLoading(false);
     }
@@ -188,12 +196,12 @@ export default function Marketplace() {
   // Handle coins-based microtransaction purchases (like Streak Shield, verified badging)
   const handleCoinsPurchase = async (itemName: string, action: string, costInCoins: number) => {
     if (!userId) {
-      alert("Traveler profile missing. Register through onboarding first.");
+      showToast("Traveler profile missing. Register through onboarding first.", "error");
       return;
     }
 
     if (coinsBalance < costInCoins) {
-      alert(`Insufficient coins balance! This item costs ${costInCoins} coins, but you only have ${coinsBalance}. Buy more coins below!`);
+      showToast(`Insufficient coins balance! This item costs ${costInCoins} coins, but you only have ${coinsBalance}. Buy more coins below!`, "error");
       return;
     }
 
@@ -234,17 +242,17 @@ export default function Marketplace() {
     } catch (err: any) {
       console.error("Coins purchase failed:", err);
       setCheckoutStatus("idle");
-      alert(err.message || "Transaction failed.");
+      showToast(err.message || "Transaction failed.", "error");
     }
   };
 
   const handleBookMentor = async (mentor: Mentor) => {
     if (!userId) {
-      alert("Traveler profile missing. Register through onboarding first.");
+      showToast("Traveler profile missing. Register through onboarding first.", "error");
       return;
     }
     if (selectedDateIndex === null || !selectedTimeSlot) {
-      alert("Please select a valid scheduled date and time slot.");
+      showToast("Please select a valid scheduled date and time slot.", "error");
       return;
     }
 
@@ -256,7 +264,7 @@ export default function Marketplace() {
     const coinsCost = Math.round(mentor.hourlyRate / 10);
 
     if (paymentMethod === "coins" && coinsBalance < coinsCost) {
-      alert(`Insufficient coins balance! This session costs ${coinsCost} coins, but you only have ${coinsBalance}.`);
+      showToast(`Insufficient coins balance! This session costs ${coinsCost} coins, but you only have ${coinsBalance}.`, "error");
       return;
     }
 
@@ -315,7 +323,7 @@ export default function Marketplace() {
       setSelectedDateIndex(null);
       setSelectedTimeSlot(null);
     } catch (err: any) {
-      alert(err.message || "Failed to finalize human mentor booking.");
+      showToast(err.message || "Failed to finalize human mentor booking.", "error");
       setCheckoutStatus("idle");
     }
   };
@@ -394,6 +402,28 @@ export default function Marketplace() {
 
   return (
     <div className="min-h-screen bg-midnight text-text-primary py-12 px-6 overflow-y-auto select-none font-sans relative">
+      {/* Immersive Toast Notification Banner */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fadeIn max-w-md w-full px-4">
+          <div className={`glass-panel border p-4 rounded-xl flex items-start space-x-3 shadow-[0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-md ${
+            toast.type === "success" 
+              ? "border-teal-spring/40 bg-[#0D1B2A]/95 text-teal-spring shadow-[0_0_15px_rgba(0,168,150,0.15)]" 
+              : toast.type === "error"
+              ? "border-orange-flame/40 bg-[#0D1B2A]/95 text-orange-flame shadow-[0_0_15px_rgba(242,100,25,0.15)]"
+              : "border-gold-sand/40 bg-[#0D1B2A]/95 text-gold-sand shadow-[0_0_15px_rgba(212,175,55,0.15)]"
+          }`}>
+            <div className="flex-1 text-xs font-semibold leading-relaxed">
+              {toast.message}
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              className="text-text-secondary hover:text-text-primary text-[10px] font-bold cursor-pointer flex-shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       {/* Immersive Starry Sky Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <svg className="absolute w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
