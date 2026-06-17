@@ -1814,23 +1814,95 @@ export default function ExpeditionDashboard() {
           {/* Column 1: Map Node List & Stats */}
           <div className="lg:col-span-5 space-y-6 flex flex-col">
             
-            {/* Expedition Progress Card */}
-            <div className="glass-panel rounded-2xl p-5 space-y-4">
-              <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase">Expedition Status</h3>
-              <p className="text-xs text-text-secondary leading-relaxed">{progress.description}</p>
+            {/* Expedition Progress & Metrics HUD Card */}
+            <div className="glass-panel rounded-2xl p-5 space-y-4 shadow-[0_0_15px_rgba(212,175,55,0.05)] border border-gold-sand/10">
+              <div className="flex items-center justify-between border-b border-gold-sand/10 pb-2">
+                <div>
+                  <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase">Traveler's HUD</h3>
+                  <p className="text-[9px] text-text-secondary mt-0.5">{progress.title || "Silk Road Expedition Trail"}</p>
+                </div>
+                <span className="text-[8px] bg-gold-sand/15 text-gold-sand font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  {userProfile?.subscriptionStatus === "active" ? "Nomad Explorer" : "Free Caravan"}
+                </span>
+              </div>
               
-              {/* Progress bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-text-secondary font-semibold">
-                  <span>Oases Discovered</span>
-                  <span>{progress.completedSteps.length} / {nodes.length} ({percentComplete}%)</span>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3.5">
+                
+                {/* 1. Oases Discovered Progress */}
+                <div className="bg-midnight/60 rounded-xl p-3 border border-text-secondary/5 flex flex-col justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Compass className="h-3.5 w-3.5 text-teal-spring animate-spin-slow" />
+                    <span className="text-[9px] font-bold text-text-secondary uppercase tracking-wider font-sans">Discovery</span>
+                  </div>
+                  <div className="mt-2.5">
+                    <div className="text-sm font-bold text-text-primary font-serif">
+                      {progress.completedSteps.length} / {nodes.length}
+                    </div>
+                    <div className="text-[8px] text-text-secondary mt-0.5 font-sans">
+                      {percentComplete}% of oases visited
+                    </div>
+                    {/* Tiny Progress Bar */}
+                    <div className="h-1.5 w-full bg-midnight/80 rounded-full overflow-hidden border border-text-secondary/5 mt-1.5">
+                      <div 
+                        className="h-full bg-gradient-to-r from-teal-spring to-gold-sand transition-all duration-500"
+                        style={{ width: `${percentComplete}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-2 w-full bg-midnight rounded-full overflow-hidden border border-text-secondary/10">
-                  <div 
-                    className="h-full bg-gradient-to-r from-teal-spring to-gold-sand transition-all duration-500"
-                    style={{ width: `${percentComplete}%` }}
-                  />
+
+                {/* 2. Active Survival Streak */}
+                <div className="bg-midnight/60 rounded-xl p-3 border border-text-secondary/5 flex flex-col justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Flame className="h-3.5 w-3.5 text-orange-flame animate-pulse" />
+                    <span className="text-[9px] font-bold text-text-secondary uppercase tracking-wider font-sans">Survival</span>
+                  </div>
+                  <div className="mt-2.5">
+                    <div className="text-sm font-bold text-orange-flame font-serif">
+                      {streak?.currentStreak || 0} Days
+                    </div>
+                    <div className="text-[8px] text-orange-flame/80 font-semibold mt-0.5 flex items-center space-x-0.5 font-sans">
+                      <span className="text-[7px]">▲</span>
+                      <span>+14% vs last week</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* 3. Coins Balance */}
+                <div className="bg-midnight/60 rounded-xl p-3 border border-text-secondary/5 flex flex-col justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Coins className="h-3.5 w-3.5 text-gold-sand" />
+                    <span className="text-[9px] font-bold text-text-secondary uppercase tracking-wider font-sans">Treasury</span>
+                  </div>
+                  <div className="mt-2.5">
+                    <div className="text-sm font-bold text-gold-sand font-serif">
+                      {userProfile?.coinsBalance || 0} Coins
+                    </div>
+                    <div className="text-[8px] text-gold-sand/80 font-semibold mt-0.5 flex items-center space-x-0.5 font-sans">
+                      <span className="text-[7px]">▲</span>
+                      <span>+25 earned today</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Active Streak Shields */}
+                <div className="bg-midnight/60 rounded-xl p-3 border border-text-secondary/5 flex flex-col justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Shield className="h-3.5 w-3.5 text-teal-spring" />
+                    <span className="text-[9px] font-bold text-text-secondary uppercase tracking-wider font-sans">Shields</span>
+                  </div>
+                  <div className="mt-2.5">
+                    <div className="text-sm font-bold text-teal-spring font-serif">
+                      {userProfile?.streakShields || 0} Active
+                    </div>
+                    <div className="text-[8px] text-teal-spring/80 font-semibold mt-0.5 flex items-center space-x-0.5 font-sans">
+                      <span className="text-[7px]">✓</span>
+                      <span>Streak protection on</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -2149,6 +2221,150 @@ export default function ExpeditionDashboard() {
                   })}
 
                 </div>
+              </div>
+            </div>
+
+            {/* Weekly Coin Earnings Trend Chart */}
+            <div className="glass-panel rounded-2xl p-5 space-y-4 border border-gold-sand/10 shadow-[0_0_15px_rgba(212,175,55,0.05)]">
+              <div className="flex items-center justify-between border-b border-gold-sand/10 pb-2">
+                <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase">Weekly Coin Earnings Trend</h3>
+                <span className="text-[8px] text-text-secondary font-bold font-sans uppercase">High Contrast Visual Analytics</span>
+              </div>
+              
+              <div className="relative h-28 w-full mt-2">
+                <svg className="w-full h-full" viewBox="0 0 300 100" preserveAspectRatio="none">
+                  {/* Grid Lines */}
+                  <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(141, 153, 174, 0.08)" strokeWidth="1" />
+                  <line x1="0" y1="50" x2="300" y2="50" stroke="rgba(141, 153, 174, 0.08)" strokeWidth="1" />
+                  <line x1="0" y1="80" x2="300" y2="80" stroke="rgba(141, 153, 174, 0.08)" strokeWidth="1" strokeDasharray="3 3" />
+                  
+                  {/* Neon Glow Trend Line */}
+                  <path
+                    d="M 10 90 Q 50 65, 90 75 T 170 35 T 250 15 T 290 25"
+                    fill="none"
+                    stroke="rgba(212, 175, 55, 0.15)"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 10 90 Q 50 65, 90 75 T 170 35 T 250 15 T 290 25"
+                    fill="none"
+                    stroke="url(#chart-neon-grad)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  
+                  {/* Chart Points */}
+                  <circle cx="10" cy="90" r="3.5" className="fill-midnight stroke-teal-spring" strokeWidth="1.5" />
+                  <circle cx="90" cy="75" r="3.5" className="fill-midnight stroke-teal-spring" strokeWidth="1.5" />
+                  <circle cx="170" cy="35" r="3.5" className="fill-midnight stroke-gold-sand" strokeWidth="1.5" />
+                  <circle cx="250" cy="15" r="3.5" className="fill-midnight stroke-gold-sand" strokeWidth="1.5" />
+                  <circle cx="290" cy="25" r="3.5" className="fill-midnight stroke-gold-sand" strokeWidth="1.5" />
+
+                  {/* Gradient definition */}
+                  <defs>
+                    <linearGradient id="chart-neon-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#00A896" />
+                      <stop offset="50%" stopColor="#00A896" />
+                      <stop offset="100%" stopColor="#D4AF37" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Y-Axis Value Indicators */}
+                <div className="absolute left-1 top-0 text-[8px] text-text-secondary/60 font-semibold font-sans">100+</div>
+                <div className="absolute left-1 top-[42%] text-[8px] text-text-secondary/60 font-semibold font-sans">50</div>
+                <div className="absolute left-1 bottom-1 text-[8px] text-text-secondary/60 font-semibold font-sans">0</div>
+              </div>
+
+              {/* X-Axis Labels */}
+              <div className="flex justify-between text-[9px] text-text-secondary/80 font-bold px-1 uppercase tracking-wider font-sans">
+                <span>Mon</span>
+                <span>Tue</span>
+                <span>Wed</span>
+                <span>Thu</span>
+                <span>Fri</span>
+                <span>Sat</span>
+                <span>Sun</span>
+              </div>
+            </div>
+
+            {/* Expedition Milestone Trail Log Table */}
+            <div className="glass-panel rounded-2xl p-5 space-y-3.5 border border-gold-sand/10 shadow-[0_0_15px_rgba(212,175,55,0.05)]">
+              <div className="flex items-center justify-between border-b border-gold-sand/10 pb-2">
+                <h3 className="text-xs font-bold text-gold-sand tracking-wide font-serif uppercase">Milestone Trail Log</h3>
+                <span className="text-[8px] text-text-secondary font-bold font-sans uppercase">Relational Ledger Records</span>
+              </div>
+
+              <div className="overflow-x-auto font-sans">
+                <table className="w-full border-collapse text-[10px]">
+                  <thead>
+                    <tr className="border-b border-gold-sand/15 text-[8.5px] text-text-secondary/70 uppercase tracking-wider font-bold">
+                      <th className="text-left pb-2 font-semibold">Oasis Node</th>
+                      <th className="text-left pb-2 font-semibold">Difficulty</th>
+                      <th className="text-right pb-2 font-semibold">Reward</th>
+                      <th className="text-right pb-2 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gold-sand/5">
+                    {nodes.map((node, index) => {
+                      const isCompleted = progress.completedSteps.includes(node.id);
+                      const isActive = progress.currentActiveNode === node.id;
+                      
+                      return (
+                        <tr 
+                          key={node.id} 
+                          onClick={() => {
+                            if (!progress.completedSteps.includes(node.id) && progress.currentActiveNode !== node.id) {
+                              const nodeIndex = progress.nodes.findIndex((n: any) => n.id === node.id);
+                              const prevNodes = progress.nodes.slice(0, nodeIndex);
+                              const allPrevCompleted = prevNodes.every((n: any) => progress.completedSteps.includes(n.id));
+                              if (!allPrevCompleted) return;
+                            }
+                            handleNodeClick(node);
+                          }}
+                          className={`hover:bg-gold-sand/[0.03] transition-colors cursor-pointer ${
+                            isActive ? "bg-teal-spring/[0.02]" : ""
+                          }`}
+                        >
+                          <td className="py-2.5 text-left font-bold text-text-primary">
+                            <span className="text-gold-sand/70 font-serif mr-1">{index + 1}.</span>
+                            {node.title}
+                          </td>
+                          <td className="py-2.5 text-left">
+                            <span className={`px-1.5 py-0.5 rounded-full text-[7.5px] font-bold uppercase tracking-wider ${
+                              node.difficulty === "beginner"
+                                ? "bg-teal-spring/10 text-teal-spring"
+                                : node.difficulty === "intermediate"
+                                ? "bg-gold-sand/10 text-gold-sand"
+                                : "bg-orange-flame/10 text-orange-flame"
+                            }`}>
+                              {node.difficulty}
+                            </span>
+                          </td>
+                          <td className="py-2.5 text-right font-mono text-gold-sand font-bold">
+                            +25 🪙
+                          </td>
+                          <td className="py-2.5 text-right">
+                            {isCompleted ? (
+                              <span className="text-gold-sand font-bold text-[8.5px] uppercase tracking-wide flex items-center justify-end">
+                                <CheckCircle className="h-3 w-3 mr-1" /> Visited
+                              </span>
+                            ) : isActive ? (
+                              <span className="text-teal-spring font-bold text-[8.5px] uppercase tracking-wide flex items-center justify-end animate-pulse">
+                                <Compass className="h-3 w-3 mr-1 animate-spin-slow" /> Active
+                              </span>
+                            ) : (
+                              <span className="text-text-secondary/40 text-[8.5px] uppercase tracking-wide flex items-center justify-end">
+                                <Lock className="h-3 w-3 mr-1 text-text-secondary/35" /> Locked
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -2500,9 +2716,20 @@ export default function ExpeditionDashboard() {
 
               </div>
             ) : (
-              <div className="glass-panel rounded-2xl p-12 text-center text-text-secondary flex flex-col items-center justify-center h-full">
-                <Compass className="h-12 w-12 text-text-secondary/40 animate-spin-slow mb-4" />
-                <p className="text-sm">Select an unlocked oasis from your Learning Trail map to view resources and solve coding puzzles.</p>
+              /* Selected Node Empty State */
+              <div className="glass-panel rounded-2xl p-6 text-center space-y-5 flex flex-col items-center justify-center min-h-[450px] border border-gold-sand/10 shadow-[0_0_15px_rgba(212,175,55,0.05)] animate-fadeIn">
+                <div className="h-16 w-16 rounded-full bg-gold-sand/10 border border-gold-sand/30 flex items-center justify-center text-gold-sand shadow-[0_0_20px_rgba(212,175,55,0.15)] animate-pulse">
+                  <Compass className="h-8 w-8 animate-spin-slow" />
+                </div>
+                <div className="space-y-2 max-w-sm">
+                  <h4 className="text-base font-bold font-serif text-gold-sand uppercase tracking-wider">Select an Oasis Node</h4>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Click on an unlocked or completed Oasis along the learning trail map (or select a milestone from the relational ledger table) to begin.
+                  </p>
+                  <p className="text-[10px] text-teal-spring bg-teal-spring/10 border border-teal-spring/30 px-3 py-1.5 rounded-xl font-bold uppercase tracking-wider mt-2">
+                    🐫 30-Second AI Study Summaries & Sandbox Code Awaiting!
+                  </p>
+                </div>
               </div>
             )}
 
