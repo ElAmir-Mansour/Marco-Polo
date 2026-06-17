@@ -14,7 +14,8 @@ This document lists all system requirements, design systems, architectural guide
 2. **AI Caravan Master (Co-pilot)**: An AI chat co-pilot that acts as a historical guide, assisting developers when they get stuck on coding challenges. Paid users get unlimited queries, mock interview evaluations, and personalized code reviews.
 3. **The Caravanserai Marketplace**: A marketplace where learners can purchase custom project boilerplates, hire verified human mentors for 1-on-1 sessions, and purchase premium certification badges.
 4. **Survival Streaks & Gamification**: A subscription tier that gives players detailed role IQ profiles, customized daily challenges, and enables them to save their streak if they miss a day using "Streak Shields" bought with platform coins.
-5. **v0 Oasis Component Generator**: A premium feature leveraging the Vercel v0 Platform API, allowing travelers to generate custom styled React + Tailwind CSS code boilerplates for their learning milestones.
+5. **v0 Oasis Component Generator (Conversion Optimized)**: A premium feature leveraging the Vercel v0 Platform API, allowing travelers to generate custom styled React + Tailwind CSS code boilerplates. Offers a **1-Time Free Trial** (saved in localStorage) to convert free users to premium Nomad Explorer tiers.
+6. **Caravanserai Community Tipping**: Encourages peer-to-peer knowledge sharing. Users can tip 10 Caravan Coins directly to forum posts, executing ACID relational database ledger transactions via AWS Aurora.
 
 ---
 
@@ -94,6 +95,8 @@ To keep our application highly scalable, we partition data between RDS Aurora Po
 2. **State Management**: Use React Server Components (RSC) for data fetching where possible, and client-side states (Zustand or standard React hooks) for interactive features like the map and chat.
 3. **Clean Code**: Keep functions pure and small. Extract business logic into service files (e.g. `src/lib/services/roadmap.ts`) instead of putting them directly inside API route handlers.
 4. **Environment Variables**: Use `.env.local` for local secrets. **NEVER** push this file to git. Ensure variables are loaded in `src/lib/env.ts` with runtime validation.
+5. **Serverless Function Duration Limits**: Overwrite default serverless timeouts for heavy AI/generative APIs by exporting `maxDuration` (e.g. `export const maxDuration = 60;` for Gemini roadmap creation, `export const maxDuration = 300;` for v0 generation).
+6. **Asynchronous Generative UI**: Heavy blocking SDK integrations (such as v0 generation, taking >100 seconds) must use an asynchronous creation mode (`responseMode: "async"` and `chatPrivacy: "unlisted"`). The client initiates generation, receives a live URL, and polls a status status-checker GET route (`GET /api/v0/generate?chatId=...`) every 4 seconds to query completion.
 
 ---
 
@@ -124,4 +127,4 @@ To maximize our chances of winning the **Hack the Zero Stack with Vercel v0 and 
 ---
 
 ## 🚀 Step-by-Step Task Checklist for Current Phase
-Refer to [task.md](file:///Users/elamir/.gemini/antigravity-ide/brain/d8d48750-aa77-482d-9f78-b5246166f412/task.md) and [implementation_plan.md](file:///Users/elamir/.gemini/antigravity-ide/brain/d8d48750-aa77-482d-9f78-b5246166f412/implementation_plan.md) in the app brain directory for the active sprint plan.
+Refer to [task.md](file:///Users/elamir/.gemini/antigravity-ide/brain/3bbd80f2-6d73-434e-95a3-bd219978ced6/task.md) and [implementation_plan.md](file:///Users/elamir/.gemini/antigravity-ide/brain/3bbd80f2-6d73-434e-95a3-bd219978ced6/implementation_plan.md) in the app brain directory for the active sprint plan.
