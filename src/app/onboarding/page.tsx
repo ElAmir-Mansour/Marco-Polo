@@ -377,7 +377,7 @@ export default function Onboarding() {
                 />
                 <h3 className="text-base font-semibold font-serif text-text-primary">Who is embarking on this journey?</h3>
                 <p className="text-xs text-text-secondary max-w-sm mx-auto mt-1">
-                  Provide your email to initialize your traveler record and sync progress profiles.
+                  Provide your email to initialize your traveler record. <span className="text-teal-spring font-medium">Judges may use any email.</span>
                 </p>
               </div>
 
@@ -470,7 +470,7 @@ export default function Onboarding() {
                     autoFocus
                   />
                   {/* Styled Segmented PIN Boxes */}
-                  <div className="flex justify-between gap-2.5 relative z-10 pointer-events-none">
+                  <div className="flex justify-between gap-1.5 sm:gap-2.5 relative z-10 pointer-events-none">
                     {Array.from({ length: 6 }).map((_, idx) => {
                       const char = otpCode[idx] || "";
                       const isFocused = otpCode.length === idx;
@@ -478,7 +478,7 @@ export default function Onboarding() {
                       return (
                         <div
                           key={idx}
-                          className={`w-10 h-12 rounded-xl flex items-center justify-center text-lg font-bold font-mono transition-all duration-300 border bg-midnight/80 ${
+                          className={`flex-1 max-w-[40px] aspect-[4/5] rounded-xl flex items-center justify-center text-base sm:text-lg font-bold font-mono transition-all duration-300 border bg-midnight/80 ${
                             isFocused
                               ? "border-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.3)] scale-105 animate-pulse"
                               : isFilled
@@ -533,6 +533,10 @@ export default function Onboarding() {
                         Resend Code
                       </button>
                     )}
+                  </div>
+
+                  <div className="bg-gold-sand/5 border border-gold-sand/20 text-gold-sand/80 text-[10px] p-2.5 rounded-lg text-center max-w-xs mx-auto animate-fadeIn select-text">
+                    <strong>Hackathon Judges:</strong> Use code <code className="bg-gold-sand/10 px-1 py-0.5 rounded font-bold text-gold-sand font-mono">123456</code> to bypass and log in instantly.
                   </div>
 
                   <button

@@ -48,6 +48,27 @@ All source code files are organized under the following standard path layouts:
 
 ---
 
+## 🏛️ Application Architecture Diagram
+
+```mermaid
+graph TD
+    Client[Client Browser] -->|HTTPS / WSS| Vercel[Vercel Serverless Frontend & APIs]
+    
+    subgraph Vercel Cloud
+        Vercel -->|Drizzle ORM / IAM Auth| RDS[(AWS RDS Aurora PostgreSQL)]
+        Vercel -->|DynamoDB Document Client| DDB[(AWS DynamoDB)]
+        Vercel -->|Vercel AI SDK| Gemini[Google Gemini API]
+        Vercel -->|v0 Platform API| V0[Vercel v0 Code Sandbox]
+    end
+    
+    subgraph Client-Side Services
+        Client -->|Web Audio API| Audio[Audio Synthesizer Engine]
+        Client -->|AST Acorn Parser| Acorn[Challenge Evaluator Sandbox]
+    end
+```
+
+---
+
 ## 🎨 Design Tokens & Custom CSS System
 
 Styling is configured using **Tailwind CSS v4** tokens declared inside [globals.css](file:///Users/elamir/Desktop/Marco_Polo/src/app/globals.css):

@@ -858,7 +858,7 @@ export default function Marketplace() {
               {/* 1. Date selector pills */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest block font-sans">Select Date</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {dateOptions.map((opt, idx) => (
                     <button
                       key={idx}
@@ -867,7 +867,7 @@ export default function Marketplace() {
                         setSelectedDateIndex(idx);
                         setSelectedTimeSlot(null); // Reset time slot when date changes
                       }}
-                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+                      className={`h-14 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
                         selectedDateIndex === idx
                           ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_12px_rgba(212,175,55,0.25)] scale-105"
                           : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-gold-sand/40 hover:text-text-primary"
@@ -902,7 +902,7 @@ export default function Marketplace() {
                         key={slot.value}
                         type="button"
                         onClick={() => setSelectedTimeSlot(slot.value)}
-                        className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-semibold cursor-pointer ${
+                        className={`h-11 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-semibold cursor-pointer ${
                           selectedTimeSlot === slot.value
                             ? "bg-teal-spring/20 border-teal-spring text-teal-spring shadow-[0_0_12px_rgba(0,168,150,0.25)] scale-105"
                             : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-teal-spring/40 hover:text-text-primary"
@@ -923,7 +923,7 @@ export default function Marketplace() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("cash")}
-                    className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
+                    className={`h-11 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
                       paymentMethod === "cash"
                         ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_10px_rgba(212,175,55,0.15)]"
                         : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-gold-sand/40 hover:text-text-primary"
@@ -935,7 +935,7 @@ export default function Marketplace() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("coins")}
-                    className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
+                    className={`h-11 rounded-xl border flex items-center justify-center space-x-2 transition-all text-xs font-bold cursor-pointer ${
                       paymentMethod === "coins"
                         ? "bg-gold-sand/20 border-gold-sand text-gold-sand shadow-[0_0_10px_rgba(212,175,55,0.15)]"
                         : "bg-midnight/70 border-text-secondary/15 text-text-secondary hover:border-gold-sand/40 hover:text-text-primary"
@@ -986,14 +986,14 @@ export default function Marketplace() {
                     setSelectedDateIndex(null);
                     setSelectedTimeSlot(null);
                   }}
-                  className="flex-1 py-3 border border-text-secondary/15 rounded-xl text-text-secondary text-xs hover:border-text-secondary/30 transition-all font-bold cursor-pointer text-center"
+                  className="flex-1 h-11 border border-text-secondary/15 rounded-xl text-text-secondary text-xs hover:border-text-secondary/30 transition-all font-bold cursor-pointer text-center flex items-center justify-center"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleBookMentor(selectedMentor)}
                   disabled={selectedDateIndex === null || !selectedTimeSlot || (paymentMethod === "coins" && coinsBalance < Math.round(selectedMentor.hourlyRate / 10))}
-                  className="flex-grow bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center"
+                  className="flex-grow bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold h-11 rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center flex items-center justify-center"
                 >
                   Confirm Booking
                 </button>

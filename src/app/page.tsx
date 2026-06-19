@@ -22,30 +22,33 @@ export default function Home() {
       {/* Navigation Header */}
       <header className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between z-20">
         <Logo size="md" />
-        <div className="flex items-center space-x-3 pointer-events-auto">
+        <div className="flex items-center space-x-2.5 pointer-events-auto">
           {/* Background Map Focus Toggle */}
           <button
             onClick={() => setBackgroundFocused(!backgroundFocused)}
-            className="border border-teal-spring/30 hover:bg-teal-spring/10 text-teal-spring text-xs font-bold px-4 py-2 rounded-xl uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            className="border border-teal-spring/30 hover:bg-teal-spring/10 text-teal-spring text-xs font-bold px-3 sm:px-4 h-11 rounded-xl uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm"
           >
             {backgroundFocused ? (
               <>
-                <EyeOff className="h-3.5 w-3.5" />
-                <span>Exit Map Focus</span>
+                <EyeOff className="h-4 w-4" />
+                <span className="hidden md:inline">Exit Map Focus</span>
+                <span className="md:hidden">Exit</span>
               </>
             ) : (
               <>
-                <Eye className="h-3.5 w-3.5" />
-                <span>Focus System Map</span>
+                <Eye className="h-4 w-4" />
+                <span className="hidden md:inline">Focus System Map</span>
+                <span className="md:hidden">Focus</span>
               </>
             )}
           </button>
           
           <Link
             href="/onboarding"
-            className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-4 py-2 rounded-xl uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(212,175,55,0.25)]"
+            className="bg-gold-sand hover:bg-gold-sand/90 text-midnight text-xs font-bold px-4 h-11 rounded-xl uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(212,175,55,0.25)] flex items-center justify-center"
           >
-            Start Journey
+            <span className="hidden sm:inline">Start Journey</span>
+            <span className="sm:hidden">Start</span>
           </Link>
         </div>
       </header>

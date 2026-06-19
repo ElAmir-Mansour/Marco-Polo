@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:check": "node scratch/check_db_tables.js"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",

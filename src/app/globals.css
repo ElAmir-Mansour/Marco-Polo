@@ -30,6 +30,11 @@ body {
   font-family: var(--font-outfit), sans-serif;
 }
 
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Hide Next.js Development Indicators & Dev Badges */
 #__next-prerender-indicator,
 .nextjs-toast-errors-parent,

@@ -811,7 +811,7 @@ export default function AssessmentCenter() {
                   <div className="w-full flex-1 flex flex-col items-center justify-between space-y-4">
                     
                     {/* SVG Radar Chart container */}
-                    <div className="relative h-[250px] w-[300px]">
+                    <div className="relative h-[250px] w-full max-w-[300px]">
                       <svg className="w-full h-full" viewBox="0 0 300 270">
                         {/* Background pentagon grid lines */}
                         {radar.gridRings.map((pts, idx) => (
