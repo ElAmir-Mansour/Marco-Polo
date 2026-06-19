@@ -1107,7 +1107,8 @@ export default function ExpeditionDashboard() {
                     <img
                       src="/images/characters/marcopolo_concerned.png"
                       alt="Marco Polo Concerned"
-                      className="h-16 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(242,100,25,0.4)] camel-walk"
+                      style={{ height: "64px", width: "auto" }}
+                      className="object-contain filter drop-shadow-[0_0_10px_rgba(242,100,25,0.4)] camel-walk"
                     />
                   </div>
                   <div>
@@ -2054,7 +2055,8 @@ export default function ExpeditionDashboard() {
                 <img
                   src="/images/characters/marcopolo_celebrating.png"
                   alt="Marco Polo Celebrating"
-                  className="h-40 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.5)] camel-walk"
+                  style={{ height: "160px", width: "auto" }}
+                  className="object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.5)] camel-walk"
                 />
                 <div className="absolute -top-2 -right-4 bg-teal-spring text-midnight text-[9px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
                   Victory! 🏆
@@ -2182,7 +2184,8 @@ export default function ExpeditionDashboard() {
                 <img
                   src="/images/characters/marcopolo_welcome.png"
                   alt="Marco Polo Tour Guide"
-                  className="h-16 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] flex-shrink-0 camel-walk"
+                  style={{ height: "64px", width: "auto" }}
+                  className="object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] flex-shrink-0 camel-walk"
                 />
               </div>
               <div className="flex-grow space-y-1 min-w-0">

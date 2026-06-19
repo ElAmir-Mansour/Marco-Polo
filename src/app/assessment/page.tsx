@@ -755,7 +755,8 @@ export default function AssessmentCenter() {
                   <img
                     src="/images/characters/marcopolo_thinking.png"
                     alt="Marco Polo Thinking"
-                    className="h-16 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] camel-walk"
+                    style={{ height: "64px", width: "auto" }}
+                    className="object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] camel-walk"
                   />
                 </div>
                 <div>

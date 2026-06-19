@@ -113,7 +113,8 @@ export default function CaravanMasterChat({ userContext, currentCode }: CaravanM
             <img
               src="/images/characters/marcopolo_welcome.png"
               alt="Marco Polo Guide"
-              className="h-32 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] camel-walk"
+              style={{ height: "128px", width: "auto" }}
+              className="object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.4)] camel-walk"
             />
             <div className="text-center text-[10px] text-text-secondary max-w-[200px] leading-relaxed font-sans">
               Your companion Marco Polo is ready. Ask any question when you get stuck!

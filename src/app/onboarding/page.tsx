@@ -373,7 +373,8 @@ export default function Onboarding() {
                 <img
                   src={`/images/characters/marcopolo_${mascotPose}.png`}
                   alt="Marco Polo Mascot"
-                  className="h-28 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2 transition-all duration-500"
+                  style={{ height: "112px", width: "auto" }}
+                  className="object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2 transition-all duration-500"
                 />
                 <h3 className="text-base font-semibold font-serif text-text-primary">Who is embarking on this journey?</h3>
                 <p className="text-xs text-text-secondary max-w-sm mx-auto mt-1">
@@ -437,7 +438,8 @@ export default function Onboarding() {
                 <img
                   src={`/images/characters/marcopolo_${mascotPose}.png`}
                   alt="Marco Polo Mascot"
-                  className="h-28 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2 transition-all duration-500"
+                  style={{ height: "112px", width: "auto" }}
+                  className="object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2 transition-all duration-500"
                 />
                 <h3 className="text-base font-semibold font-serif text-text-primary">Enter Verification Code</h3>
                 <p className="text-xs text-text-secondary max-w-sm mx-auto mt-1">
@@ -565,7 +567,8 @@ export default function Onboarding() {
                   <img
                     src="/images/characters/marcopolo_celebrating.png"
                     alt="Marco Polo Mascot"
-                    className="h-28 w-auto mx-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2"
+                    style={{ height: "112px", width: "auto" }}
+                    className="mx-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.45)] camel-walk mb-2"
                   />
                   <h3 className="text-lg font-bold font-serif text-gold-sand uppercase tracking-wider">{generatedRoadmap.title}</h3>
                   <p className="text-xs text-text-secondary px-6 leading-relaxed">{generatedRoadmap.description}</p>
@@ -622,7 +625,8 @@ export default function Onboarding() {
                       <img
                         src={`/images/characters/marcopolo_${mascotPose}.png`}
                         alt="Marco Polo Mascot"
-                        className="h-28 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(212,175,55,0.45)] camel-walk"
+                        style={{ height: "112px", width: "auto" }}
+                        className="object-contain filter drop-shadow-[0_0_12px_rgba(212,175,55,0.45)] camel-walk"
                       />
                       <p className="text-[10px] text-text-secondary max-w-xs font-sans">
                         Master Marco Polo will ask you a few questions to chart your personalized learning trail.

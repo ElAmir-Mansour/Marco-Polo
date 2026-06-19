@@ -477,7 +477,8 @@ export default function Marketplace() {
             <img
               src="/images/characters/marcopolo_bazaar.png"
               alt="Marco Polo Shopkeeper"
-              className="h-32 sm:h-36 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(212,175,55,0.45)] hover:scale-105 transition-all duration-500 camel-walk"
+              style={{ height: "128px", width: "auto" }}
+              className="object-contain filter drop-shadow-[0_0_12px_rgba(212,175,55,0.45)] hover:scale-105 transition-all duration-500 camel-walk"
             />
             <div className="absolute -top-3 -left-8 bg-indigo-oasis/95 border border-gold-sand/30 rounded-xl px-2.5 py-1 text-[9px] font-bold text-gold-sand shadow-lg animate-bounce select-none whitespace-nowrap backdrop-blur-sm">
               Trade well, traveler! 🪙
