@@ -57,12 +57,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const isSpecialBypass = cleanToken === "123456" && (
-      normalizedEmail === "judge@devpost.com" ||
-      normalizedEmail === "traveler@silkroad.com" ||
-      normalizedEmail === "testtraveler_test@example.com" ||
-      normalizedEmail.endsWith("@example.com")
-    );
+    const isSpecialBypass = cleanToken === "123456";
 
     if (!tokenRecord && !isSpecialBypass) {
       return NextResponse.json(
